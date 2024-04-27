@@ -21,7 +21,7 @@ type Nues struct {
 
 var nues Nues
 
-func NewServer(_config Nues) error {
+func RunServer(_config Nues) error {
 
 	if _config.ColCommands == "" {
 		_config.ColCommands = "commands"
@@ -45,10 +45,12 @@ func NewServer(_config Nues) error {
 	MustNotEmpty(_config.Port, NewError(-1, "Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
 	nues = _config
+
+	run()
 	return nil
 }
 
-func (n *Nues) Run() {
+func run() {
 	api := NuesApi{
 		throttle:  make(map[string]int),
 		reqPerSec: 4,
