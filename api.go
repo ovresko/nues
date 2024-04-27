@@ -306,7 +306,7 @@ func (h *NuesApi) Serve() {
 }
 
 func (h *NuesApi) AuthAdmin(r *http.Request) bool {
-	sysToken := os.Getenv("ADMIN_TOKEN")
+	sysToken := nues.AdminToken
 	var authToken = ""
 	cookie, _ := r.Cookie("token")
 	if cookie == nil {

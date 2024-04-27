@@ -12,6 +12,7 @@ type Nues struct {
 	ColCommands    string
 	ColWatchers    string
 	ColSession     string
+	AdminToken     string
 	Reset          bool
 	Port           string
 	Routes         Routes
