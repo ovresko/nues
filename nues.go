@@ -22,11 +22,23 @@ type Nues struct {
 var nues Nues
 
 func NewServer(_config Nues) error {
-	MustNotEmpty(_config.ColCommands, NewError(-1, "ColCommands is required"))
-	MustNotEmpty(_config.ColEvents, NewError(-1, "ColEvents is required"))
-	MustNotEmpty(_config.ColProjections, NewError(-1, "ColProjections is required"))
-	MustNotEmpty(_config.ColSession, NewError(-1, "ColSession is required"))
-	MustNotEmpty(_config.ColWatchers, NewError(-1, "ColWatchers is required"))
+
+	if _config.ColCommands == "" {
+		_config.ColCommands = "commands"
+	}
+	if _config.ColEvents == "" {
+		_config.ColEvents = "events"
+	}
+	if _config.ColProjections == "" {
+		_config.ColProjections = "projections"
+	}
+	if _config.ColSession == "" {
+		_config.ColSession = "sessions"
+	}
+	if _config.ColWatchers == "" {
+		_config.ColWatchers = "watchers"
+	}
+
 	MustNotEmpty(_config.MongoDb, NewError(-1, "MongoDb is required"))
 	MustNotEmpty(_config.MongoUri, NewError(-1, "MongoUri is required"))
 	MustNotEmpty(_config.MongoPrefix, NewError(-1, "MongoPrefix is required"))
