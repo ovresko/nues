@@ -67,7 +67,6 @@ func RunServer(_config Nues) error {
 	MustNotEmpty(_config.DbPrefix, NewError(-1, "MongoPrefix is required"))
 	MustNotEmpty(_config.ApiPort, NewError(-1, "API Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
-	MustNotEmpty(_config.RpcPort, NewError(-1, "RPC Port is required"))
 	nues = _config
 
 	logL := slog.LevelWarn
@@ -82,7 +81,9 @@ func RunServer(_config Nues) error {
 func run() {
 	initAuth()
 	initDb()
-	initRpc()
+	if nues.RpcPort != "" {
+		initRpc()
+	}
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	var api Server = &NuesApi{
@@ -92,10 +93,12 @@ func run() {
 	}
 	go api.Serve(ctx)
 
-	var rpc Server = &NuesRpc{
-		Network: "tcp",
+	if nues.RpcPort != "" {
+		var rpc Server = &NuesRpc{
+			Network: "tcp",
+		}
+		go rpc.Serve(ctx)
 	}
-	go rpc.Serve(ctx)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
