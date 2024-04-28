@@ -29,9 +29,6 @@ type NuesRpcResponse struct {
 
 type NuesRpc struct {
 	Network string
-	Ip      string
-	Name    string
-
 	context context.Context
 }
 
@@ -168,7 +165,7 @@ func (n *NuesRpc) Serve(ctx context.Context) error {
 	slog.Info("starting RPC server...")
 	n.context = ctx
 
-	serviceEnv := n.Name + "#" + n.Ip + "#" + nues.RpcPort + "|"
+	serviceEnv := nues.ServiceId + "#" + nues.ServiceIp + "#" + nues.RpcPort + "|"
 	env := os.Getenv("NUES_SERVICES")
 	env = strings.ReplaceAll(env, serviceEnv, "")
 	serviceEnv = env + serviceEnv
