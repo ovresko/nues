@@ -123,7 +123,7 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 }
 
 func (d *Database) GetCollection(col string) *mongo.Collection {
-	return d.Collection(fmt.Sprintf("%s_%s", nues.MongoPrefix, col))
+	return d.Collection(fmt.Sprintf("%s_%s", nues.DbPrefix, col))
 }
 
 func (d *Database) GetOne(Collection, field, value string) (*bson.M, error) {
@@ -191,17 +191,17 @@ func init() {
 
 func initNuesDb() {
 
-	if nues.MongoUri == "" {
+	if nues.DbUri == "" {
 		slog.Error("You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
 		panic("mongo uri")
 	}
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(nues.MongoUri))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(nues.DbUri))
 	if err != nil {
 		panic(err)
 	}
 
 	DB = &Database{
-		Database: client.Database(nues.MongoDb),
+		Database: client.Database(nues.DbName),
 		Bus:      make(chan Event),
 	}
 

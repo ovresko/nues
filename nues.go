@@ -1,17 +1,32 @@
 package nues
 
-import "context"
+import (
+	"context"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+)
+
+type Server interface {
+	Serve(context.Context) error
+	Close() error
+}
 
 type Nues struct {
 	Debug          bool
-	MongoUri       string
-	MongoDb        string
-	MongoPrefix    string
+	ServiceId      string
+	IdentityDbUri  string
+	IdentityDbName string
+	DbUri          string
+	DbName         string
+	DbPrefix       string
 	ColEvents      string
 	ColProjections string
 	ColCommands    string
 	ColWatchers    string
 	ColSession     string
+	ColIdentity    string
 	AdminToken     string
 	Reset          bool
 	Port           string
@@ -38,23 +53,56 @@ func RunServer(_config Nues) error {
 	if _config.ColWatchers == "" {
 		_config.ColWatchers = "watchers"
 	}
+	if _config.ColIdentity == "" {
+		_config.ColIdentity = "identity"
+	}
+	if _config.IdentityDbName == "" {
+		_config.IdentityDbName = "identity"
+	}
 
-	MustNotEmpty(_config.MongoDb, NewError(-1, "MongoDb is required"))
-	MustNotEmpty(_config.MongoUri, NewError(-1, "MongoUri is required"))
-	MustNotEmpty(_config.MongoPrefix, NewError(-1, "MongoPrefix is required"))
+	MustNotEmpty(_config.ServiceId, NewError(-1, "Service Name is required"))
+	MustNotEmpty(_config.DbName, NewError(-1, "MongoDb is required"))
+	MustNotEmpty(_config.DbUri, NewError(-1, "MongoUri is required"))
+	MustNotEmpty(_config.DbPrefix, NewError(-1, "MongoPrefix is required"))
 	MustNotEmpty(_config.Port, NewError(-1, "Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
 	nues = _config
 
+	logL := slog.LevelWarn
+	if nues.Debug {
+		logL = slog.LevelDebug
+	}
+	slog.LogAttrs(context.TODO(), logL, nues.ServiceId)
 	run()
 	return nil
 }
 
 func run() {
-	api := NuesApi{
+	initAuth()
+	ctx, cancel := context.WithCancel(context.TODO())
+	var api Server = &NuesApi{
 		throttle:  make(map[string]int),
 		reqPerSec: 4,
 		context:   context.TODO(),
 	}
-	api.Serve()
+	go api.Serve(ctx)
+
+	var rpc Server = &NuesRpc{
+		Network: "tcp",
+		Port:    ":9999",
+	}
+	go rpc.Serve(ctx)
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	slog.Info("shutdown server ...")
+	cancel()
+	if err := api.Close(); err != nil {
+		slog.Error("error stopping API", err)
+	}
+	if err := rpc.Close(); err != nil {
+		slog.Error("error stopping RPC", err)
+	}
+	slog.Info("server exiting")
 }

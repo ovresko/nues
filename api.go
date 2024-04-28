@@ -6,10 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"time"
 
@@ -17,29 +14,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type RouteResponse map[string]any
-type RouteAuthType int
-type RouteCallType int
-type Routes map[string]Route
-
-const (
-	ROUTE_PUBLIC RouteAuthType = iota
-	ROUTE_USER
-	ROUTE_ADMIN
-
-	COMMAND RouteCallType = iota
-	QUERY
-	HANDLER
-)
-
-type Route struct {
-	auth    RouteAuthType
-	call    RouteCallType
-	handler func() any
-}
-
 type NuesApi struct {
 	context   context.Context
+	server    *http.Server
 	throttle  map[string]int
 	reqPerSec int
 }
@@ -48,7 +25,7 @@ func Ping(context.Context, map[string]any) RouteResponse {
 	return RouteResponse{"response": true}
 }
 
-func (h *NuesApi) httpServe(ctx context.Context, route Route, r *http.Request) (any, error) {
+func (h *NuesApi) httpServe(route Route, r *http.Request) (any, error) {
 
 	body, err := io.ReadAll(r.Body)
 
@@ -70,7 +47,7 @@ func (h *NuesApi) httpServe(ctx context.Context, route Route, r *http.Request) (
 			}
 		}
 
-		res := handler(ctx, reqBody)
+		res := handler(h.context, reqBody)
 		return res, nil
 
 	case COMMAND:
@@ -90,7 +67,7 @@ func (h *NuesApi) httpServe(ctx context.Context, route Route, r *http.Request) (
 			Command: cmd,
 			CallId:  callId,
 		}
-		cmdRoot.Execute(ctx)
+		cmdRoot.Execute(h.context)
 		return cmdRoot, nil
 
 	case QUERY:
@@ -108,29 +85,29 @@ func (h *NuesApi) httpServe(ctx context.Context, route Route, r *http.Request) (
 		queryRoot := &QueryRoot{
 			Query: query,
 		}
-		queryRoot.Execute(ctx)
+		queryRoot.Execute(h.context)
 		return queryRoot, nil
 	}
 	return nil, ErrSystemInternal
 
 }
 
-func (h *NuesApi) httpAuth(route Route, r *http.Request) bool {
+// func (h *NuesApi) httpAuth(route Route, r *http.Request) bool {
 
-	switch route.auth {
-	case ROUTE_PUBLIC:
-		slog.Info("PUBLIC route")
-		return true
-	case ROUTE_USER:
-		slog.Info("USER", "path", route)
-		return h.AuthUser(r)
-	case ROUTE_ADMIN:
-		slog.Info("ADMIN", "path", route)
-		return h.AuthAdmin(r)
-	}
+// 	switch route.auth {
+// 	case ROUTE_PUBLIC:
+// 		slog.Info("PUBLIC route")
+// 		return true
+// 	case ROUTE_USER:
+// 		slog.Info("USER", "path", route)
+// 		return h.AuthUser(r)
+// 	case ROUTE_ADMIN:
+// 		slog.Info("ADMIN", "path", route)
+// 		return h.AuthAdmin(r)
+// 	}
 
-	return false
-}
+// 	return false
+// }
 
 func (h *NuesApi) clearthrottle() {
 
@@ -167,7 +144,6 @@ func (h *NuesApi) config() {
 	slog.Info("Runing API server configuration")
 	http.HandleFunc("/api/*", func(w http.ResponseWriter, r *http.Request) {
 
-		ctx := context.Background()
 		fullpath := r.URL.Path
 		var parts []string
 		var found bool
@@ -178,6 +154,8 @@ func (h *NuesApi) config() {
 		var err error
 		var callId string
 		var called bool
+		var token string
+		var cookie *http.Cookie
 
 		if !h.canCall(r) {
 			http.Error(w, "rate limit exceeded", http.StatusForbidden)
@@ -205,8 +183,14 @@ func (h *NuesApi) config() {
 			goto abort
 		}
 		slog.Info("serving route", "path", path, "route", route)
-
-		auth = h.httpAuth(route, r)
+		cookie, _ = r.Cookie("token")
+		if cookie != nil {
+			token = cookie.Value
+		}
+		if token == "" {
+			token = r.Header.Get("token")
+		}
+		auth = AuthCall(token, route)
 		if !auth {
 			goto notAuthed
 		}
@@ -227,7 +211,7 @@ func (h *NuesApi) config() {
 			}
 		}
 		if !called {
-			response, err = h.httpServe(ctx, route, r)
+			response, err = h.httpServe(route, r)
 		}
 
 		if err != nil {
@@ -258,103 +242,83 @@ func (h *NuesApi) config() {
 		return
 
 	})
-
 }
 
-func (h *NuesApi) Serve() {
+func (h *NuesApi) Close() error {
+
+	return h.server.Close()
+}
+
+func (h *NuesApi) Serve(ctx context.Context) error {
+	h.context = ctx
 	h.config()
-	ctxCancel, cancelListener := context.WithCancel(context.TODO())
-	h.context = ctxCancel
 	h.throttle = make(map[string]int)
 	if h.reqPerSec == 0 {
 		h.reqPerSec = 2
 	}
 
 	go h.clearthrottle()
-	srv := &http.Server{
+	h.server = &http.Server{
 		Addr:           nues.Port,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	go func() {
-		// service connections
-		slog.Info("starting Server ...")
+	slog.Info("starting Server ...")
 
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("listen: %s\n", err)
-			panic("server error")
-		}
-	}()
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	slog.Info("shutdown server ...")
-	cancelListener()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 0*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		slog.Error("server shutdown Error:", err)
-		panic("server error")
-	}
-	// catching ctx.Done(). timeout of 5 seconds.
-	<-ctx.Done()
-	slog.Info("server exiting")
-
+	return h.server.ListenAndServe()
 }
 
-func (h *NuesApi) AuthAdmin(r *http.Request) bool {
-	sysToken := nues.AdminToken
-	var authToken = ""
-	cookie, _ := r.Cookie("token")
-	if cookie == nil {
-		authToken = r.Header.Get("token")
-	}
-	if authToken == "" {
-		return false
-	}
+// func (h *NuesApi) AuthAdmin(r *http.Request) bool {
+// 	sysToken := nues.AdminToken
+// 	var authToken = ""
+// 	cookie, _ := r.Cookie("token")
+// 	if cookie == nil {
+// 		authToken = r.Header.Get("token")
+// 	}
+// 	if authToken == "" {
+// 		return false
+// 	}
 
-	if err := AssertNotEmpty(authToken, ErrUserNotAuth); err != nil {
-		return false
-	}
-	if err := AssertNotEmpty(sysToken, ErrUserNotAuth); err != nil {
-		return false
-	}
-	if err := AssertTrue(authToken == sysToken, ErrUserNotAuth); err != nil {
-		return false
-	}
+// 	if err := AssertNotEmpty(authToken, ErrUserNotAuth); err != nil {
+// 		return false
+// 	}
+// 	if err := AssertNotEmpty(sysToken, ErrUserNotAuth); err != nil {
+// 		return false
+// 	}
+// 	if err := AssertTrue(authToken == sysToken, ErrUserNotAuth); err != nil {
+// 		return false
+// 	}
 
-	return true
-}
+// 	return true
+// }
 
-func (h *NuesApi) AuthUser(r *http.Request) bool {
-	var session bson.M
-	var userid = ""
-	var token = ""
-	var vals []string
-	var authToken = ""
-	cookie, _ := r.Cookie("token")
-	if cookie == nil {
-		authToken = r.Header.Get("token")
-	}
-	if authToken == "" {
-		return false
-	}
+// func (h *NuesApi) AuthUser(r *http.Request) bool {
+// 	var session bson.M
+// 	var userid = ""
+// 	var token = ""
+// 	var vals []string
+// 	var authToken = ""
+// 	cookie, _ := r.Cookie("token")
+// 	if cookie == nil {
+// 		authToken = r.Header.Get("token")
+// 	}
+// 	if authToken == "" {
+// 		return false
+// 	}
 
-	vals = strings.Split(authToken, ":")
-	if err := AssertTrue(len(vals) == 2, ErrUserNotAuth); err != nil {
-		return false
-	}
-	userid = vals[0]
-	token = vals[1]
+// 	vals = strings.Split(authToken, ":")
+// 	if err := AssertTrue(len(vals) == 2, ErrUserNotAuth); err != nil {
+// 		return false
+// 	}
+// 	userid = vals[0]
+// 	token = vals[1]
 
-	if err := DB.GetCollection(nues.ColSession).FindOne(context.TODO(), bson.D{{"token", token}, {"userid", userid}}).Decode(&session); err != nil {
-		if err != nil || session == nil {
-			return false
-		}
-	}
-	return true
-
-}
+// 	if err := DB.GetCollection(nues.ColSession).FindOne(context.TODO(), bson.D{{"token", token}, {"userid", userid}}).Decode(&session); err != nil {
+// 		if err != nil || session == nil {
+// 			return false
+// 		}
+// 	}
+// 	return true
+// }
