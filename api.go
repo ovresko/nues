@@ -265,7 +265,7 @@ func (h *NuesApi) Serve(ctx context.Context) error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	slog.Info("starting Server ...")
+	slog.Info("starting API Server ...")
 
 	return h.server.ListenAndServe()
 }

@@ -29,7 +29,8 @@ type Nues struct {
 	ColIdentity    string
 	AdminToken     string
 	Reset          bool
-	Port           string
+	ApiPort        string
+	RpcPort        string
 	Routes         Routes
 	ReqPerSec      int
 }
@@ -64,8 +65,9 @@ func RunServer(_config Nues) error {
 	MustNotEmpty(_config.DbName, NewError(-1, "MongoDb is required"))
 	MustNotEmpty(_config.DbUri, NewError(-1, "MongoUri is required"))
 	MustNotEmpty(_config.DbPrefix, NewError(-1, "MongoPrefix is required"))
-	MustNotEmpty(_config.Port, NewError(-1, "Port is required"))
+	MustNotEmpty(_config.ApiPort, NewError(-1, "API Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
+	MustNotEmpty(_config.RpcPort, NewError(-1, "RPC Port is required"))
 	nues = _config
 
 	logL := slog.LevelWarn
@@ -92,7 +94,7 @@ func run() {
 
 	var rpc Server = &NuesRpc{
 		Network: "tcp",
-		Port:    ":9999",
+		Port:    nues.RpcPort,
 	}
 	go rpc.Serve(ctx)
 
