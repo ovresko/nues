@@ -142,7 +142,7 @@ func (h *NuesApi) canCall(r *http.Request) bool {
 func (h *NuesApi) config() {
 
 	slog.Info("Runing API server configuration")
-	http.HandleFunc("/api/*", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 
 		fullpath := r.URL.Path
 		slog.Debug("API call", "path", fullpath)
