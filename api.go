@@ -249,7 +249,7 @@ func (h *NuesApi) Close() error {
 	return h.server.Close()
 }
 
-func (h *NuesApi) Serve(ctx context.Context) error {
+func (h *NuesApi) Serve(ctx context.Context) {
 	h.context = ctx
 	h.config()
 	h.throttle = make(map[string]int)
@@ -267,7 +267,10 @@ func (h *NuesApi) Serve(ctx context.Context) error {
 
 	slog.Info("starting API Server ...", "port", nues.ApiPort)
 
-	return h.server.ListenAndServe()
+	err := h.server.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // func (h *NuesApi) AuthAdmin(r *http.Request) bool {

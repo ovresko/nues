@@ -161,7 +161,7 @@ func rpcServe(ctx context.Context, route Route, args *NuesRpcArgs) (any, error) 
 func (n *NuesRpc) Close() error {
 	return nil
 }
-func (n *NuesRpc) Serve(ctx context.Context) error {
+func (n *NuesRpc) Serve(ctx context.Context) {
 	slog.Info("starting RPC server...")
 	n.context = ctx
 
@@ -173,9 +173,12 @@ func (n *NuesRpc) Serve(ctx context.Context) error {
 	l, err := net.Listen(n.Network, nues.RpcPort)
 	if err != nil {
 		slog.Error("listen error:", err)
-		return err
+		panic(err)
 	}
-	return http.Serve(l, nil)
+	err = http.Serve(l, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getService(name string) *NuesService {

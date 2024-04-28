@@ -9,7 +9,7 @@ import (
 )
 
 type Server interface {
-	Serve(context.Context) error
+	Serve(context.Context)
 	Close() error
 }
 
