@@ -166,6 +166,7 @@ func (n *NuesRpc) Close() error {
 	return nil
 }
 func (n *NuesRpc) Serve(ctx context.Context) error {
+	slog.Info("starting RPC server...")
 	n.context = ctx
 
 	serviceEnv := n.Name + "#" + n.Ip + "#" + n.Port + "|"
