@@ -259,7 +259,7 @@ func (h *NuesApi) Serve(ctx context.Context) error {
 
 	go h.clearthrottle()
 	h.server = &http.Server{
-		Addr:           nues.Port,
+		Addr:           nues.ApiPort,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,

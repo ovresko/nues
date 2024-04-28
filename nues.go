@@ -94,7 +94,6 @@ func run() {
 
 	var rpc Server = &NuesRpc{
 		Network: "tcp",
-		Port:    nues.RpcPort,
 	}
 	go rpc.Serve(ctx)
 

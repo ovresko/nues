@@ -30,7 +30,6 @@ type NuesRpcResponse struct {
 type NuesRpc struct {
 	Network string
 	Ip      string
-	Port    string
 	Name    string
 
 	context context.Context
@@ -169,12 +168,12 @@ func (n *NuesRpc) Serve(ctx context.Context) error {
 	slog.Info("starting RPC server...")
 	n.context = ctx
 
-	serviceEnv := n.Name + "#" + n.Ip + "#" + n.Port + "|"
+	serviceEnv := n.Name + "#" + n.Ip + "#" + nues.RpcPort + "|"
 	env := os.Getenv("NUES_SERVICES")
 	env = strings.ReplaceAll(env, serviceEnv, "")
 	serviceEnv = env + serviceEnv
 	os.Setenv("NUES_SERVICES", serviceEnv)
-	l, err := net.Listen(n.Network, n.Port)
+	l, err := net.Listen(n.Network, nues.RpcPort)
 	if err != nil {
 		slog.Error("listen error:", err)
 		return err
