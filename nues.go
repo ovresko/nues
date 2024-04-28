@@ -79,6 +79,9 @@ func RunServer(_config Nues) error {
 
 func run() {
 	initAuth()
+	initDb()
+	initRpc()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	var api Server = &NuesApi{
 		throttle:  make(map[string]int),

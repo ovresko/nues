@@ -44,7 +44,7 @@ type NuesService struct {
 
 var services map[string]NuesService = make(map[string]NuesService)
 
-func init() {
+func initRpc() {
 	nrc := new(NuesRpcCall)
 	rpc.RegisterName("NuesRpcCall", nrc)
 	rpc.HandleHTTP()

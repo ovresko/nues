@@ -185,11 +185,7 @@ func (d *Database) Disconnect() error {
 	return d.Client().Disconnect(context.TODO())
 }
 
-func init() {
-	initNuesDb()
-}
-
-func initNuesDb() {
+func initDb() {
 
 	if nues.DbUri == "" {
 		slog.Error("You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
