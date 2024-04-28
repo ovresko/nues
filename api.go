@@ -33,9 +33,9 @@ func (h *NuesApi) httpServe(route Route, r *http.Request) (any, error) {
 		return nil, ErrSystemInternal
 	}
 
-	switch route.call {
+	switch route.Call {
 	case HANDLER:
-		handler, ok := route.handler().(func(context.Context, map[string]any) RouteResponse)
+		handler, ok := route.Handler().(func(context.Context, map[string]any) RouteResponse)
 		if !ok {
 			return nil, ErrSystemInternal
 		}
@@ -51,7 +51,7 @@ func (h *NuesApi) httpServe(route Route, r *http.Request) (any, error) {
 		return res, nil
 
 	case COMMAND:
-		var cmdClone = route.handler()
+		var cmdClone = route.Handler()
 		cmd, ok := cmdClone.(Command)
 		if !ok {
 			return nil, ErrSystemInternal
@@ -71,7 +71,7 @@ func (h *NuesApi) httpServe(route Route, r *http.Request) (any, error) {
 		return cmdRoot, nil
 
 	case QUERY:
-		var queryClone = route.handler()
+		var queryClone = route.Handler()
 		query, ok := queryClone.(Query)
 		if !ok {
 			return nil, ErrSystemInternal

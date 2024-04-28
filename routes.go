@@ -11,8 +11,8 @@ const (
 )
 
 type Route struct {
-	name    string
-	public  bool
-	call    RouteCallType
-	handler func() any
+	Name    string
+	Public  bool
+	Call    RouteCallType
+	Handler func() any
 }

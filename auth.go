@@ -49,10 +49,10 @@ func initAuth() {
 
 func AuthCall(token string, route Route) bool {
 
-	if route.name == "" {
+	if route.Name == "" {
 		panic("route name is required")
 	}
-	if route.public {
+	if route.Public {
 		return true
 	}
 	if token == "" {
@@ -79,6 +79,6 @@ func AuthCall(token string, route Route) bool {
 		return false
 	}
 	// full service access
-	return len(access) == 0 || slices.Contains(access, route.name) || (len(access) == 1 && access[0] == "*")
+	return len(access) == 0 || slices.Contains(access, route.Name) || (len(access) == 1 && access[0] == "*")
 
 }
