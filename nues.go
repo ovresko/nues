@@ -14,26 +14,27 @@ type Server interface {
 }
 
 type Nues struct {
-	Debug          bool
-	ServiceId      string
-	ServiceIp      string
-	IdentityDbUri  string
-	IdentityDbName string
-	DbUri          string
-	DbName         string
-	DbPrefix       string
-	ColEvents      string
-	ColProjections string
-	ColCommands    string
-	ColWatchers    string
-	ColSession     string
-	ColIdentity    string
-	AdminToken     string
-	Reset          bool
-	ApiPort        string
-	RpcPort        string
-	Routes         Routes
-	ReqPerSec      int
+	Debug           bool
+	ServiceId       string
+	ServiceIp       string
+	ServicesFileUrl string
+	IdentityDbUri   string
+	IdentityDbName  string
+	DbUri           string
+	DbName          string
+	DbPrefix        string
+	ColEvents       string
+	ColProjections  string
+	ColCommands     string
+	ColWatchers     string
+	ColSession      string
+	ColIdentity     string
+	AdminToken      string
+	Reset           bool
+	ApiPort         string
+	RpcPort         string
+	Routes          Routes
+	ReqPerSec       int
 }
 
 var nues Nues
@@ -69,6 +70,7 @@ func RunServer(_config Nues) error {
 	MustNotEmpty(_config.ApiPort, NewError(-1, "API Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
 	MustNotEmpty(_config.ServiceIp, NewError(-1, "Service Ip is required"))
+	MustNotEmpty(_config.ServicesFileUrl, NewError(-1, "ServicesFileUrl Ip is required"))
 
 	nues = _config
 

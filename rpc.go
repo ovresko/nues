@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/rpc"
-	"os"
-	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,9 +38,10 @@ type NuesService struct {
 	Name string
 }
 
-var services map[string]NuesService = make(map[string]NuesService)
+var services map[string]*NuesService = make(map[string]*NuesService)
 
 func initRpc() {
+	loadServices()
 	nrc := new(NuesRpcCall)
 	rpc.RegisterName("NuesRpcCall", nrc)
 	rpc.HandleHTTP()
@@ -165,11 +166,6 @@ func (n *NuesRpc) Serve(ctx context.Context) {
 	slog.Info("starting RPC server...")
 	n.context = ctx
 
-	serviceEnv := nues.ServiceId + "#" + nues.ServiceIp + "#" + nues.RpcPort + "|"
-	env := os.Getenv("NUES_SERVICES")
-	env = strings.ReplaceAll(env, serviceEnv, "")
-	serviceEnv = env + serviceEnv
-	os.Setenv("NUES_SERVICES", serviceEnv)
 	l, err := net.Listen(n.Network, nues.RpcPort)
 	if err != nil {
 		slog.Error("listen error:", err)
@@ -184,44 +180,48 @@ func (n *NuesRpc) Serve(ctx context.Context) {
 func getService(name string) *NuesService {
 	service, found := services[name]
 	if !found {
-		err := loadServices()
-		if err != nil {
-			panic(err)
-		}
-		service, found = services[name]
-	}
-	if !found {
 		slog.Error("service %s not found", name)
-		panic("service not found")
+		panic(fmt.Sprintf("service %v not found", name))
 	}
-	return &service
+	return service
 
 }
-func loadServices() error {
-	for k := range services {
-		delete(services, k)
-	}
-	servicestr := os.Getenv("NUES_SERVICES")
-	if servicestr == "" {
-		return NewError(-1, fmt.Sprintln("service %v not found", servicestr))
-	}
-	servicesarr := strings.Split(servicestr, "|")
-	for _, v := range servicesarr {
-		if v == "" {
-			continue
-		}
-		keys := strings.Split(v, "#")
-		serviceName := keys[0]
-		serviceIp := keys[1]
-		servicePort := keys[2]
-		services[serviceName] = NuesService{
-			Ip:   serviceIp,
-			Port: servicePort,
-			Name: serviceName,
-		}
-	}
+func loadServices() {
 
-	return nil
+	go func() {
+		c := http.DefaultClient
+		for {
+			res, err := c.Get(nues.ServicesFileUrl)
+			if err != nil {
+				slog.Error("load service failed", "err", err)
+			} else {
+				body, err := io.ReadAll(res.Body)
+				if err != nil {
+					slog.Error("load service failed", "err", err)
+				} else {
+					var newServices map[string]map[string]string = make(map[string]map[string]string)
+					err = json.Unmarshal(body, &newServices)
+					if err != nil {
+						slog.Error("load service failed", "err", err)
+					} else {
+						for k := range services {
+							delete(services, k)
+						}
+						for k, v := range newServices {
+							slog.Debug("registering new service", "name", k, "ip", v["ip"], "port", v["port"])
+							services[k] = &NuesService{
+								Ip:   v["ip"],
+								Port: v["port"],
+								Name: k,
+							}
+						}
+					}
+				}
+			}
+			time.Sleep(time.Duration(time.Second * 60))
+		}
+	}()
+
 }
 
 func RequestRpc(serviceName string, args NuesRpcArgs) (*NuesRpcResponse, error) {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"slices"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,7 +25,6 @@ type Session struct {
 }
 
 var db *mongo.Database
-var serviceToken string
 
 func initAuth() {
 	if nues.IdentityDbUri == "" {
@@ -43,7 +41,6 @@ func initAuth() {
 	if nues.Reset {
 		db.Drop(context.TODO())
 	}
-	serviceToken = os.Getenv("NUES_ADMIN_TOKEN")
 
 }
 
@@ -59,7 +56,7 @@ func AuthCall(token string, route Route) bool {
 		return false
 	}
 
-	if serviceToken == token {
+	if nues.AdminToken == token {
 		return true
 	}
 
