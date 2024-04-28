@@ -81,6 +81,7 @@ func RunServer(_config Nues) error {
 func run() {
 	initAuth()
 	initDb()
+	var rpc Server
 	if nues.RpcPort != "" {
 		initRpc()
 	}
@@ -94,7 +95,7 @@ func run() {
 	go api.Serve(ctx)
 
 	if nues.RpcPort != "" {
-		var rpc Server = &NuesRpc{
+		rpc = &NuesRpc{
 			Network: "tcp",
 		}
 		go rpc.Serve(ctx)
@@ -108,8 +109,10 @@ func run() {
 	if err := api.Close(); err != nil {
 		slog.Error("error stopping API", err)
 	}
-	if err := rpc.Close(); err != nil {
-		slog.Error("error stopping RPC", err)
+	if rpc != nil {
+		if err := rpc.Close(); err != nil {
+			slog.Error("error stopping RPC", err)
+		}
 	}
 	slog.Info("server exiting")
 }
