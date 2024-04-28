@@ -15,7 +15,6 @@ func main() {
 	_ = nues.RunServer(nues.Nues{
 		Debug:          true,
 		ServiceId:      "sabilwallet_1",
-		ServiceIp:      "localhost",
 		IdentityDbUri:  "mongodb://localhost:27017",
 		IdentityDbName: "identity",
 		DbUri:          "mongodb://localhost:27017",

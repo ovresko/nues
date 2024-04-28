@@ -16,7 +16,6 @@ type Server interface {
 type Nues struct {
 	Debug           bool
 	ServiceId       string
-	ServiceIp       string
 	ServicesFileUrl string
 	IdentityDbUri   string
 	IdentityDbName  string
@@ -69,7 +68,6 @@ func RunServer(_config Nues) error {
 	MustNotEmpty(_config.DbPrefix, NewError(-1, "MongoPrefix is required"))
 	MustNotEmpty(_config.ApiPort, NewError(-1, "API Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
-	MustNotEmpty(_config.ServiceIp, NewError(-1, "Service Ip is required"))
 	MustNotEmpty(_config.ServicesFileUrl, NewError(-1, "ServicesFileUrl Ip is required"))
 
 	nues = _config
