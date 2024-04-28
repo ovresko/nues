@@ -145,6 +145,7 @@ func (h *NuesApi) config() {
 	http.HandleFunc("/api/*", func(w http.ResponseWriter, r *http.Request) {
 
 		fullpath := r.URL.Path
+		slog.Debug("API call", "path", fullpath)
 		var parts []string
 		var found bool
 		var path string
