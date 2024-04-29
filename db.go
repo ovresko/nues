@@ -123,6 +123,9 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 }
 
 func (d *Database) GetCollection(col string) *mongo.Collection {
+	if col == "" {
+		panic("no collection should be empty, something is seriously wrong")
+	}
 	return d.Collection(fmt.Sprintf("%s_%s", nues.DbPrefix, col))
 }
 

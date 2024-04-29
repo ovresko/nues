@@ -2,6 +2,7 @@ package nues
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"reflect"
 	"time"
@@ -28,6 +29,30 @@ type CommandRoot struct {
 	CallId   string          `json:"callId"`
 }
 
+func (cr *CommandRoot) validate() SysError {
+	err := validate.Struct(cr.Command)
+	if err != nil {
+		var errMsg string
+		for _, err := range err.(validator.ValidationErrors) {
+
+			errMsg = fmt.Sprintf("%v\n%v", errMsg, err.Error())
+			fmt.Println(err.Namespace())
+			fmt.Println(err.Field())
+			fmt.Println(err.StructNamespace())
+			fmt.Println(err.StructField())
+			fmt.Println(err.Tag())
+			fmt.Println(err.ActualTag())
+			fmt.Println(err.Kind())
+			fmt.Println(err.Type())
+			fmt.Println(err.Value())
+			fmt.Println(err.Param())
+			fmt.Println()
+		}
+		return NewError(-1, errMsg)
+	}
+	return nil
+}
+
 func (cr *CommandRoot) Execute(ctx context.Context) {
 
 	start := time.Now()
@@ -35,9 +60,9 @@ func (cr *CommandRoot) Execute(ctx context.Context) {
 		cr.Ts = time.Since(start).String()
 	}()
 
-	err := validate.Struct(cr.Command)
+	err := cr.validate()
 	if err != nil {
-		cr.Error = NewError(-1, err.Error())
+		cr.Error = err
 		return
 	}
 	session, err := DB.Client().StartSession()
