@@ -35,7 +35,7 @@ func (cr *CommandRoot) validate() SysError {
 		var errMsg string
 		for _, err := range err.(validator.ValidationErrors) {
 
-			errMsg = fmt.Sprintf("%v\n%v", errMsg, fmt.Sprintf("%v %v condition failed.", err.Field()), err.Tag())
+			errMsg = fmt.Sprintf("%s\n%s", errMsg, fmt.Sprintf("%s %s condition failed.", err.Field(), err.Tag()))
 
 		}
 		return NewError(-1, errMsg)
