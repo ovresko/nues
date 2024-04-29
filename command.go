@@ -35,18 +35,8 @@ func (cr *CommandRoot) validate() SysError {
 		var errMsg string
 		for _, err := range err.(validator.ValidationErrors) {
 
-			errMsg = fmt.Sprintf("%v\n%v", errMsg, fmt.Sprintf("%v %v", err.Field()), err.Param())
-			fmt.Println(err.Namespace())
-			fmt.Println(err.Field())
-			fmt.Println(err.StructNamespace())
-			fmt.Println(err.StructField())
-			fmt.Println(err.Tag())
-			fmt.Println(err.ActualTag())
-			fmt.Println(err.Kind())
-			fmt.Println(err.Type())
-			fmt.Println(err.Value())
-			fmt.Println(err.Param())
-			fmt.Println("============")
+			errMsg = fmt.Sprintf("%v\n%v", errMsg, fmt.Sprintf("%v %v condition failed.", err.Field()), err.Tag())
+
 		}
 		return NewError(-1, errMsg)
 	}
