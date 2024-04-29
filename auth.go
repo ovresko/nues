@@ -19,9 +19,6 @@ type Session struct {
 	Token      string
 }
 
-var identityCol string
-var sessionCol string
-
 func initAuth() {
 
 	// register service as identity
@@ -46,7 +43,7 @@ func RegisterNewIdentity(identity Identity) error {
 		return err
 	}
 
-	_, err := DB.GetCollection(identityCol).UpdateOne(context.TODO(), bson.M{"_id": identity.IdentityId}, bson.M{"$set": identity}, options.Update().SetUpsert(true))
+	_, err := DB.GetCollection(nues.colIdentity).UpdateOne(context.TODO(), bson.M{"_id": identity.IdentityId}, bson.M{"$set": identity}, options.Update().SetUpsert(true))
 
 	if err != nil {
 		return err
@@ -71,12 +68,12 @@ func authCall(token string, route Route) bool {
 	}
 
 	var session *Session
-	err := DB.GetCollection(sessionCol).FindOne(context.TODO(), bson.M{"token": token}).Decode(session)
+	err := DB.GetCollection(nues.colSessions).FindOne(context.TODO(), bson.M{"token": token}).Decode(session)
 	if err != nil || session == nil {
 		return false
 	}
 	var identity *Identity
-	err = DB.GetCollection(identityCol).FindOne(context.TODO(), bson.M{"_id": session.IdentityId}).Decode(identity)
+	err = DB.GetCollection(nues.colIdentity).FindOne(context.TODO(), bson.M{"_id": session.IdentityId}).Decode(identity)
 	if err != nil || identity == nil {
 		return false
 	}
