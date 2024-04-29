@@ -21,7 +21,7 @@ type Command interface {
 }
 
 type CommandRoot struct {
-	Response CommandResponse `json:"response,omitempty"`
+	Response CommandResponse `json:"response"`
 	Executed bool            `json:"executed"`
 	Error    SysError        `json:"error"`
 	Command  Command         `json:"command"`
