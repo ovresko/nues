@@ -67,7 +67,7 @@ func (n *NuesRpcCall) Call(args *NuesRpcArgs, reply *NuesRpcResponse) error {
 	if callId != "" {
 		// try call history
 		var call bson.M
-		err := DB.GetCollection(nues.ColCommands).FindOne(context.TODO(), bson.M{"_id": callId}).Decode(&call)
+		err := DB.GetCollection(nues.colCommands).FindOne(context.TODO(), bson.M{"_id": callId}).Decode(&call)
 		if err != nil && err != mongo.ErrNoDocuments {
 			return ErrSystemInternal
 		}

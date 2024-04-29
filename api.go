@@ -201,7 +201,7 @@ func (h *NuesApi) config() {
 		if callId != "" {
 			// try call history
 			var call bson.M
-			err := DB.GetCollection(nues.ColCommands).FindOne(context.TODO(), bson.M{"_id": callId}).Decode(&call)
+			err := DB.GetCollection(nues.colCommands).FindOne(context.TODO(), bson.M{"_id": callId}).Decode(&call)
 			if err != nil && err != mongo.ErrNoDocuments {
 				goto abort
 			}
@@ -273,56 +273,3 @@ func (h *NuesApi) Serve(ctx context.Context) {
 		panic(err)
 	}
 }
-
-// func (h *NuesApi) AuthAdmin(r *http.Request) bool {
-// 	sysToken := nues.AdminToken
-// 	var authToken = ""
-// 	cookie, _ := r.Cookie("token")
-// 	if cookie == nil {
-// 		authToken = r.Header.Get("token")
-// 	}
-// 	if authToken == "" {
-// 		return false
-// 	}
-
-// 	if err := AssertNotEmpty(authToken, ErrUserNotAuth); err != nil {
-// 		return false
-// 	}
-// 	if err := AssertNotEmpty(sysToken, ErrUserNotAuth); err != nil {
-// 		return false
-// 	}
-// 	if err := AssertTrue(authToken == sysToken, ErrUserNotAuth); err != nil {
-// 		return false
-// 	}
-
-// 	return true
-// }
-
-// func (h *NuesApi) AuthUser(r *http.Request) bool {
-// 	var session bson.M
-// 	var userid = ""
-// 	var token = ""
-// 	var vals []string
-// 	var authToken = ""
-// 	cookie, _ := r.Cookie("token")
-// 	if cookie == nil {
-// 		authToken = r.Header.Get("token")
-// 	}
-// 	if authToken == "" {
-// 		return false
-// 	}
-
-// 	vals = strings.Split(authToken, ":")
-// 	if err := AssertTrue(len(vals) == 2, ErrUserNotAuth); err != nil {
-// 		return false
-// 	}
-// 	userid = vals[0]
-// 	token = vals[1]
-
-// 	if err := DB.GetCollection(nues.ColSession).FindOne(context.TODO(), bson.D{{"token", token}, {"userid", userid}}).Decode(&session); err != nil {
-// 		if err != nil || session == nil {
-// 			return false
-// 		}
-// 	}
-// 	return true
-// }

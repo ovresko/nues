@@ -2,12 +2,9 @@ package nues
 
 import (
 	"context"
-	"fmt"
-	"log/slog"
 	"slices"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -22,29 +19,10 @@ type Session struct {
 	Token      string
 }
 
-var db *mongo.Database
 var identityCol string
 var sessionCol string
 
 func initAuth() {
-
-	if nues.IdentityDbUri == "" {
-		slog.Error("You must set IdentityDbUri")
-		panic("IdentityDbUri uri")
-	}
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(nues.IdentityDbUri))
-	if err != nil {
-		panic(err)
-	}
-
-	identityCol = fmt.Sprintf("%s_%s", nues.DbPrefix, nues.ColIdentity)
-	sessionCol = fmt.Sprintf("%s_%s", nues.DbPrefix, nues.ColSession)
-
-	db = client.Database(nues.IdentityDbName)
-
-	if nues.Reset {
-		db.Drop(context.TODO())
-	}
 
 	// register service as identity
 	identity := Identity{
@@ -52,7 +30,7 @@ func initAuth() {
 		IdentityId:      nues.ServiceId,
 		AllowedServices: map[string][]string{},
 	}
-	err = RegisterNewIdentity(identity)
+	err := RegisterNewIdentity(identity)
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +46,7 @@ func RegisterNewIdentity(identity Identity) error {
 		return err
 	}
 
-	_, err := db.Collection(identityCol).UpdateOne(context.TODO(), bson.M{"_id": identity.IdentityId}, identity, options.Update().SetUpsert(true))
+	_, err := DB.GetCollection(identityCol).UpdateOne(context.TODO(), bson.M{"_id": identity.IdentityId}, identity, options.Update().SetUpsert(true))
 
 	if err != nil {
 		return err
@@ -93,12 +71,12 @@ func authCall(token string, route Route) bool {
 	}
 
 	var session *Session
-	err := db.Collection(sessionCol).FindOne(context.TODO(), bson.M{"token": token}).Decode(session)
+	err := DB.GetCollection(sessionCol).FindOne(context.TODO(), bson.M{"token": token}).Decode(session)
 	if err != nil || session == nil {
 		return false
 	}
 	var identity *Identity
-	err = db.Collection(identityCol).FindOne(context.TODO(), bson.M{"_id": session.IdentityId}).Decode(identity)
+	err = DB.GetCollection(identityCol).FindOne(context.TODO(), bson.M{"_id": session.IdentityId}).Decode(identity)
 	if err != nil || identity == nil {
 		return false
 	}

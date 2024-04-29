@@ -6,11 +6,14 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type CommandResponse map[string]interface{}
+
+var validate = validator.New(validator.WithRequiredStructEnabled())
 
 type Command interface {
 	Handle(context.Context) (CommandResponse, error)
@@ -32,6 +35,11 @@ func (cr *CommandRoot) Execute(ctx context.Context) {
 		cr.Ts = time.Since(start).String()
 	}()
 
+	err := validate.Struct(cr.Command)
+	if err != nil {
+		cr.Error = NewError(-1, err.Error())
+		return
+	}
 	session, err := DB.Client().StartSession()
 
 	if err != nil {
@@ -72,7 +80,7 @@ func (cr *CommandRoot) Execute(ctx context.Context) {
 		cr.Executed = true
 		if cr.CallId != "" {
 			// save command result for Idempotent check
-			_, err := DB.GetCollection(nues.ColCommands).InsertOne(context.TODO(), bson.M{"_id": cr.CallId, "response": cr, "date": time.Now()})
+			_, err := DB.GetCollection(nues.colCommands).InsertOne(context.TODO(), bson.M{"_id": cr.CallId, "response": cr, "date": time.Now()})
 			if err != nil {
 				cr.Error = ErrSystemInternal
 				cr.Executed = false

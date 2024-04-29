@@ -66,7 +66,7 @@ func BuildProjection[T Projection]() error {
 	var p T
 
 	proj := &ProjectionRoot{}
-	if err := DB.GetCollection(nues.ColProjections).FindOne(context.TODO(), bson.D{{"_id", p.Name()}}).Decode(proj); err != nil {
+	if err := DB.GetCollection(nues.colProjections).FindOne(context.TODO(), bson.D{{"_id", p.Name()}}).Decode(proj); err != nil {
 		slog.Error("no projection exist, creating new projection", "proj", p.Name(), "error", err)
 		if err == mongo.ErrNoDocuments {
 			// no projection, so save one and remove collection
@@ -76,7 +76,7 @@ func BuildProjection[T Projection]() error {
 				Sequence: 0,
 				Modified: time.Now(),
 			}
-			if err := DB.Upsert(nues.ColProjections, "_id", proj.Id, proj); err != nil {
+			if err := DB.Upsert(nues.colProjections, "_id", proj.Id, proj); err != nil {
 				slog.Error("upsert new projection failed", err)
 				return err
 			}
@@ -105,7 +105,7 @@ func BuildProjection[T Projection]() error {
 	if lastSeq > projSeq {
 		// we need to update
 		eventsQuery := append(streamQuery, bson.D{{"sequence", bson.D{{"$gt", projSeq}}}}...)
-		cur, err := DB.GetCollection(nues.ColEvents).Find(context.TODO(), eventsQuery, options.Find().SetSort(bson.D{{"sequence", 1}}))
+		cur, err := DB.GetCollection(nues.colEvents).Find(context.TODO(), eventsQuery, options.Find().SetSort(bson.D{{"sequence", 1}}))
 		if err != nil && err != mongo.ErrNoDocuments {
 			slog.Error("error", err)
 			return err
@@ -118,7 +118,7 @@ func BuildProjection[T Projection]() error {
 		}
 		seq, err := p.Update(events)
 		// update project
-		_, errUpdate := DB.SetValue(nues.ColProjections, proj.Id, "sequence", seq)
+		_, errUpdate := DB.SetValue(nues.colProjections, proj.Id, "sequence", seq)
 		if err != nil {
 			slog.Error("updating projection failed", "err", err)
 			return err
@@ -127,7 +127,7 @@ func BuildProjection[T Projection]() error {
 			slog.Error("error", errUpdate)
 			return errUpdate
 		}
-		_, errUpdate = DB.SetValue(nues.ColProjections, proj.Id, "modified", time.Now())
+		_, errUpdate = DB.SetValue(nues.colProjections, proj.Id, "modified", time.Now())
 		if errUpdate != nil {
 			slog.Error("error", errUpdate)
 			return errUpdate
@@ -190,7 +190,7 @@ func buildStreamQuery(streams []string) bson.D {
 func getLastSeq(query bson.D) (int64, error) {
 
 	seq := bson.M{}
-	err := DB.GetCollection(nues.ColEvents).FindOne(context.TODO(), query, options.FindOne().SetSort(bson.D{{"sequence", -1}}).SetProjection(bson.D{{"sequence", 1}})).Decode(seq)
+	err := DB.GetCollection(nues.colEvents).FindOne(context.TODO(), query, options.FindOne().SetSort(bson.D{{"sequence", -1}}).SetProjection(bson.D{{"sequence", 1}})).Decode(seq)
 	if err == mongo.ErrNoDocuments {
 		slog.Error("error", err)
 		return 0, nil

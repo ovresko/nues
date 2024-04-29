@@ -44,7 +44,7 @@ func (e *Event) save(ctx context.Context) error {
 		return fmt.Errorf("event tiemstamp is not valid")
 	}
 
-	_, err := DB.GetCollection(nues.ColEvents).InsertOne(ctx, e)
+	_, err := DB.GetCollection(nues.colEvents).InsertOne(ctx, e)
 
 	return err
 }
@@ -79,7 +79,7 @@ func GetLastSequence() int64 {
 	evMutex.Lock()
 
 	var res bson.M
-	err := DB.GetCollection(nues.ColEvents).FindOne(context.TODO(), bson.D{}, options.FindOne().SetProjection(bson.D{{"sequence", 1}}).SetSort(bson.D{{"sequence", -1}})).Decode(&res)
+	err := DB.GetCollection(nues.colEvents).FindOne(context.TODO(), bson.D{}, options.FindOne().SetProjection(bson.D{{"sequence", 1}}).SetSort(bson.D{{"sequence", -1}})).Decode(&res)
 	if err != nil {
 		switch err {
 		case mongo.ErrNoDocuments:

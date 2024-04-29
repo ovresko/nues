@@ -24,7 +24,7 @@ var DB *Database
 var watchMutex sync.Mutex = sync.Mutex{}
 
 func (d *Database) Events() *mongo.Collection {
-	return d.GetCollection(nues.ColEvents)
+	return d.GetCollection(nues.colEvents)
 }
 
 func (d *Database) WatchEvents(eventName string, callback func(Event) error) error {
@@ -38,20 +38,20 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 	pipe := bson.D{{"$match", bson.D{{"operationType", "insert"}, {"fullDocument.name", eventName}}}}
 
 	var resumeAfter bson.M
-	err := d.GetCollection(nues.ColWatchers).FindOne(context.TODO(), bson.M{"_id": eventName}).Decode(&resumeAfter)
+	err := d.GetCollection(nues.colWatchers).FindOne(context.TODO(), bson.M{"_id": eventName}).Decode(&resumeAfter)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
 			slog.Error("watcher failed for event", "event", eventName, "error", err)
 			return err
 		}
 		resumeAfter = bson.M{"_id": eventName, "resume": nil}
-		_, err := d.GetCollection(nues.ColWatchers).InsertOne(context.TODO(), resumeAfter)
+		_, err := d.GetCollection(nues.colWatchers).InsertOne(context.TODO(), resumeAfter)
 		if err != nil {
 			slog.Error("watcher failed to insert watcher doc", "event", eventName, "error", err)
 			return err
 		}
 	}
-	st, err := d.GetCollection(nues.ColEvents).Watch(context.TODO(), mongo.Pipeline{
+	st, err := d.GetCollection(nues.colEvents).Watch(context.TODO(), mongo.Pipeline{
 		pipe,
 	}, options.ChangeStream().SetFullDocument(options.UpdateLookup).SetResumeAfter(resumeAfter["resume"]))
 
@@ -97,7 +97,7 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 				if err != nil {
 					slog.Error("watcher callback failed", "ev", eventName, "seq", ev, "err", err)
 				} else {
-					DB.GetCollection(nues.ColWatchers).UpdateOne(context.TODO(), bson.M{"_id": eventName},
+					DB.GetCollection(nues.colWatchers).UpdateOne(context.TODO(), bson.M{"_id": eventName},
 						bson.D{
 							{"$set", bson.M{"resume": changeEvent.ResumeAfter, "changed": time.Now()}}},
 					)
@@ -179,7 +179,7 @@ func (d *Database) SetValue(Collection, id, field string, value interface{}) (in
 }
 
 func (d *Database) Projections() *mongo.Collection {
-	return d.GetCollection(nues.ColProjections)
+	return d.GetCollection(nues.colProjections)
 }
 func (d *Database) Disconnect() error {
 	return d.Client().Disconnect(context.TODO())
@@ -212,7 +212,7 @@ func createIndexes() {
 	index := mongo.IndexModel{
 		Keys: bson.M{"name": 1},
 	}
-	_, err := DB.GetCollection(nues.ColEvents).Indexes().CreateOne(context.Background(), index)
+	_, err := DB.GetCollection(nues.colEvents).Indexes().CreateOne(context.Background(), index)
 	if err != nil {
 		slog.Error("create index failed", err)
 		panic(err)
@@ -224,7 +224,7 @@ func createIndexes() {
 		Keys:    bson.M{"date": 1},
 		Options: commandsIndexOptions,
 	}
-	_, err = DB.GetCollection(nues.ColCommands).Indexes().CreateOne(context.Background(), commandsIndex)
+	_, err = DB.GetCollection(nues.colEvents).Indexes().CreateOne(context.Background(), commandsIndex)
 	if err != nil {
 		slog.Error("create index failed", err)
 		panic(err)

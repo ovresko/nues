@@ -17,50 +17,26 @@ type Nues struct {
 	Debug           bool
 	ServiceId       string
 	ServicesFileUrl string
-	IdentityDbUri   string
-	IdentityDbName  string
 	DbUri           string
 	DbName          string
 	DbPrefix        string
-	ColEvents       string
-	ColProjections  string
-	ColCommands     string
-	ColWatchers     string
-	ColSession      string
-	ColIdentity     string
 	AdminToken      string
 	Reset           bool
 	ApiPort         string
 	RpcPort         string
 	Routes          Routes
 	ReqPerSec       int
+	colCommands     string
+	colIdentity     string
+	colSessions     string
+	colEvents       string
+	colWatchers     string
+	colProjections  string
 }
 
 var nues Nues
 
 func RunServer(_config Nues) error {
-
-	if _config.ColCommands == "" {
-		_config.ColCommands = "commands"
-	}
-	if _config.ColEvents == "" {
-		_config.ColEvents = "events"
-	}
-	if _config.ColProjections == "" {
-		_config.ColProjections = "projections"
-	}
-	if _config.ColSession == "" {
-		_config.ColSession = "sessions"
-	}
-	if _config.ColWatchers == "" {
-		_config.ColWatchers = "watchers"
-	}
-	if _config.ColIdentity == "" {
-		_config.ColIdentity = "identity"
-	}
-	if _config.IdentityDbName == "" {
-		_config.IdentityDbName = "identity"
-	}
 
 	MustNotEmpty(_config.ServiceId, NewError(-1, "Service Name is required"))
 	MustNotEmpty(_config.DbName, NewError(-1, "MongoDb is required"))
@@ -70,6 +46,12 @@ func RunServer(_config Nues) error {
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
 	MustNotEmpty(_config.ServicesFileUrl, NewError(-1, "ServicesFileUrl Ip is required"))
 
+	_config.colCommands = "commands"
+	_config.colIdentity = "identities"
+	_config.colSessions = "sessions"
+	_config.colEvents = "events"
+	_config.colWatchers = "watchers"
+	_config.colProjections = "projections"
 	nues = _config
 
 	logL := slog.LevelWarn
