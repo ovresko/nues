@@ -46,7 +46,7 @@ func RegisterNewIdentity(identity Identity) error {
 		return err
 	}
 
-	_, err := DB.GetCollection(identityCol).UpdateOne(context.TODO(), bson.M{"_id": identity.IdentityId}, identity, options.Update().SetUpsert(true))
+	_, err := DB.GetCollection(identityCol).UpdateOne(context.TODO(), bson.M{"_id": identity.IdentityId}, bson.M{"$set": identity}, options.Update().SetUpsert(true))
 
 	if err != nil {
 		return err
