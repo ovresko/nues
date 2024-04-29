@@ -64,8 +64,8 @@ func RunServer(_config Nues) error {
 }
 
 func run() {
-	initAuth()
 	initDb()
+	initAuth()
 	var rpc Server
 	if nues.RpcPort != "" {
 		initRpc()
