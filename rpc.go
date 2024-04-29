@@ -56,7 +56,7 @@ func (n *NuesRpcCall) Call(args *NuesRpcArgs, reply *NuesRpcResponse) error {
 	if !found {
 		return ErrBadCommand
 	}
-	auth := AuthCall(args.Token, route)
+	auth := authCall(args.Token, route)
 	if !auth {
 		return ErrUserNotAuth
 	}

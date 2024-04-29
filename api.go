@@ -191,7 +191,7 @@ func (h *NuesApi) config() {
 		if token == "" {
 			token = r.Header.Get("token")
 		}
-		auth = AuthCall(token, route)
+		auth = authCall(token, route)
 		if !auth {
 			goto notAuthed
 		}
