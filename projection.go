@@ -43,6 +43,13 @@ func UpdateProjection[T Projection](id string, valuesMap interface{}, upsert boo
 		slog.Error("project update failed due to missing id")
 		return ErrMissingReuiredFields
 	}
+
+	err := validate.Struct(valuesMap)
+	if err != nil {
+		slog.Error("saving projection failed", "err", err)
+		return err
+	}
+
 	var p T
 	res, err := DB.GetCollection(p.Name()).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": valuesMap}, options.Update().SetUpsert(upsert))
 	if err != nil {

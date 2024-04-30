@@ -188,6 +188,19 @@ func (d *Database) Disconnect() error {
 	return d.Client().Disconnect(context.TODO())
 }
 
+func (d *Database) AddIndex(field string, collection string) error {
+	index := mongo.IndexModel{
+		Keys: bson.D{
+			{field, 1},
+		},
+	}
+	_, err := d.GetCollection(collection).Indexes().CreateOne(context.Background(), index)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func initDb() {
 
 	if nues.DbUri == "" {
