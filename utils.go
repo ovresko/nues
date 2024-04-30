@@ -6,12 +6,18 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"io"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+)
+
+const (
+	phonePattern = `^0[5679]\d{8}$`
 )
 
 func GenerateId() string {
@@ -178,4 +184,19 @@ func GetClientIpAddr(r *http.Request) string {
 
 	ip, _, _ := net.SplitHostPort(IPAddress)
 	return ip
+}
+
+func phoneValidator(fl validator.FieldLevel) bool {
+
+	if !fl.Field().IsValid() {
+		return false
+	}
+
+	phone := fl.Field().String()
+	if phone == "" {
+		return false
+	}
+	regex := regexp.MustCompile(phonePattern)
+
+	return regex.MatchString(phone)
 }

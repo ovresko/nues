@@ -63,9 +63,14 @@ func RunServer(_config Nues) error {
 	return nil
 }
 
+func registerCustomValidators() {
+	validate.RegisterValidation("phone_dz", phoneValidator)
+}
+
 func run() {
 	initDb()
 	initAuth()
+	registerCustomValidators()
 	var rpc Server
 	if nues.RpcPort != "" {
 		initRpc()
