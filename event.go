@@ -23,11 +23,9 @@ type EvAttempt struct {
 var EvSignedupName string = "EvSignedup"
 
 type EvSignedup struct {
-	UserId   string
 	Username string
 	Phone    string
 	Pin      string
-	Active   bool
 	FcmToken string
 }
 
