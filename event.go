@@ -32,10 +32,7 @@ type EvSignedup struct {
 var EvUserBlockedName string = "EvUserBlocked"
 
 type EvUserBlocked struct {
-	Username string
-	Phone    string
-	Pin      string
-	FcmToken string
+	Id string
 }
 
 var EvLoggedinName string = "EvLoggedin"

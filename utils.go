@@ -20,6 +20,26 @@ const (
 	phonePattern = `^0[5679]\d{8}$`
 )
 
+func IsValidPhoneNumber(phoneNumber string) bool {
+	regex := regexp.MustCompile(phonePattern)
+	return regex.MatchString(phoneNumber)
+}
+
+func CleanPhoneNumber(rawNumber string) (string, error) {
+
+	if rawNumber == "" {
+		return "", ErrPhoneBadFormat
+	}
+
+	cleaned := regexp.MustCompile(`\D`).ReplaceAllString(rawNumber, "")
+	cleaned = regexp.MustCompile(`^(2130)`).ReplaceAllString(cleaned, "0")
+
+	if IsValidPhoneNumber(cleaned) {
+		return cleaned, nil
+	}
+	return "", ErrPhoneBadFormat
+}
+
 func GenerateId() string {
 	id := uuid.NewString()
 	return id

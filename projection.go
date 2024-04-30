@@ -39,9 +39,9 @@ func GetProjectionFirst[T Projection](pipeline mongo.Pipeline) (*T, error) {
 }
 func UpdateProjection[T Projection](id string, valuesMap interface{}, upsert bool) error {
 
-	if err := AssertNotEmpty(id, ErrMissingReuiredFields); err != nil {
+	if err := AssertNotEmpty(id, ErrProjectionFailed); err != nil {
 		slog.Error("project update failed due to missing id")
-		return ErrMissingReuiredFields
+		return err
 	}
 
 	err := validate.Struct(valuesMap)
