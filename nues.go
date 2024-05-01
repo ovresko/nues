@@ -80,7 +80,7 @@ func registerCustomValidators() {
 }
 
 func run() {
-	initDb()
+	initNuesDb()
 	initAuth()
 	registerCustomValidators()
 	var rpc Server

@@ -36,6 +36,12 @@ type EvUserBlocked struct {
 	UserId string `json:"id"`
 }
 
+var EvUserUnblockedName string = "EvUserUnblocked"
+
+type EvUserUnblocked struct {
+	UserId string `json:"id"`
+}
+
 var EvLoggedinName string = "EvLoggedin"
 
 type EvLoggedin struct {
@@ -60,13 +66,6 @@ type EvProfileUpdated struct {
 	Gender   string    `json:"gender"`
 	Birthday time.Time `json:"birthday"`
 	Wilaya   string    `json:"wilaya"`
-}
-
-var EvPhoneValidatedName string = "EvPhoneValidated"
-
-type EvPhoneValidated struct {
-	UserId string `json:"user_id"`
-	Phone  string `json:"phone"`
 }
 
 var EvOtpSentName string = "EvOtpSent"
@@ -171,13 +170,22 @@ type EvVoucherExpired struct {
 var EvSentName string = "EvSent"
 
 type EvSent struct {
-	Reference string  `json:"reference"`
-	UserId    string  `json:"user_id"`
-	Recipient string  `json:"recipient"`
-	Comments  string  `json:"comments"`
-	Purpose   string  `json:"purpose"`
-	RequestId string  `json:"request_id"`
-	Amount    float64 `json:"amount"`
+	Reference   string  `json:"reference,omitempty"`
+	SenderId    string  `json:"sender_id,omitempty"`
+	RecipientId string  `json:"recipient_id,omitempty"`
+	Comments    string  `json:"comments,omitempty"`
+	Purpose     string  `json:"purpose,omitempty"`
+	RequestId   string  `json:"request_id,omitempty"`
+	Amount      float64 `json:"amount,omitempty"`
+}
+
+var EvTransferredName string = "EvTransferred"
+
+type EvTransferred struct {
+	Reference   string  `validate:"required" json:"reference,omitempty"`
+	SenderId    string  `validate:"required" json:"sender_id,omitempty"`
+	RecipientId string  `validate:"required" json:"recipient_id,omitempty"`
+	Amount      float64 `validate:"required,gt=0" json:"amount,omitempty"`
 }
 
 var EvCashTopupName string = "EvCashTopup"

@@ -201,26 +201,38 @@ func (d *Database) AddIndex(field string, collection string) error {
 	return nil
 }
 
-func initDb() {
+func initNuesDb() {
 
-	if nues.DbUri == "" {
-		slog.Error("You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
-		panic("mongo uri")
-	}
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(nues.DbUri))
+	var err error
+	DB, err = InitNewDb(nues.DbUri, nues.DbName, nues.Reset)
 	if err != nil {
 		panic(err)
 	}
+	createIndexes()
 
-	DB = &Database{
-		Database: client.Database(nues.DbName),
+}
+
+func InitNewDb(dbUri, dbName string, reset bool) (*Database, error) {
+
+	if dbUri == "" {
+		slog.Error("You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
+		return nil, NewError(-1, "dburi required")
+	}
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dbUri))
+	if err != nil {
+		return nil, err
+	}
+
+	_DB := &Database{
+		Database: client.Database(dbName),
 		Bus:      make(chan Event),
 	}
 
-	if nues.Reset {
-		DB.Drop(context.TODO())
+	if reset {
+		_DB.Drop(context.TODO())
 	}
-	createIndexes()
+
+	return _DB, nil
 }
 
 func createIndexes() {
