@@ -6,6 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Server interface {
@@ -14,44 +18,40 @@ type Server interface {
 }
 
 type Nues struct {
-	Debug           bool
-	ServiceId       string
-	ServicesFileUrl string
-	DbUri           string
-	DbName          string
-	DbPrefix        string
-	AdminToken      string
-	Reset           bool
-	ApiPort         string
-	RpcPort         string
-	Routes          Routes
-	ReqPerSec       int
-	colCommands     string
-	colIdentity     string
-	colSessions     string
-	colEvents       string
-	colWatchers     string
-	colProjections  string
+	Debug       bool
+	ServiceId   string
+	ServiceName string
+	DbUri       string
+	IP          string
+	ApiPort     string
+	RpcPort     string
+	Routes      Routes
+	ReqPerSec   int
+
+	dbName         string
+	dbPrefix       string
+	adminToken     string
+	reset          bool
+	colCommands    string
+	colIdentity    string
+	colSessions    string
+	colEvents      string
+	colWatchers    string
+	colProjections string
+	services       []NuesService
 }
 
 var nues Nues
 
 func RunServer(_config Nues) error {
 
-	MustNotEmpty(_config.ServiceId, NewError(-1, "Service Name is required"))
-	MustNotEmpty(_config.DbName, NewError(-1, "MongoDb is required"))
+	MustNotEmpty(_config.IP, NewError(-1, "IP is required"))
+	MustNotEmpty(_config.ServiceId, NewError(-1, "Service ID is required"))
+	MustNotEmpty(_config.ServiceName, NewError(-1, "Service Name is required"))
 	MustNotEmpty(_config.DbUri, NewError(-1, "MongoUri is required"))
-	MustNotEmpty(_config.DbPrefix, NewError(-1, "MongoPrefix is required"))
 	MustNotEmpty(_config.ApiPort, NewError(-1, "API Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
-	MustNotEmpty(_config.ServicesFileUrl, NewError(-1, "ServicesFileUrl Ip is required"))
 
-	_config.colCommands = "commands"
-	_config.colIdentity = "identities"
-	_config.colSessions = "sessions"
-	_config.colEvents = "events"
-	_config.colWatchers = "watchers"
-	_config.colProjections = "projections"
 	nues = _config
 
 	logL := slog.LevelWarn
@@ -79,7 +79,96 @@ func registerCustomValidators() {
 	validate.RegisterValidation("phone_dz", phoneValidator)
 }
 
+func initConfig() {
+
+	configDb := "sabil"
+	db, err := InitNewDb(nues.DbUri, configDb, false)
+	if err != nil {
+		panic(err)
+	}
+	var config bson.M
+	err = db.Collection("config").FindOne(context.TODO(), bson.M{}).Decode(&config)
+	if err != nil {
+		panic(err)
+	}
+	var ok bool
+	nues.reset, ok = config["reset"].(bool)
+	if !ok {
+		panic("init config error")
+	}
+	nues.adminToken, ok = config["admin_token"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.colCommands, ok = config["col_commands"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.colEvents, ok = config["col_events"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.colIdentity, ok = config["col_identity"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.colProjections, ok = config["col_projections"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.colSessions, ok = config["col_sessions"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.colWatchers, ok = config["col_watchers"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.dbName, ok = config["db_name"].(string)
+	if !ok {
+		panic("init config error")
+	}
+	nues.dbPrefix, ok = config["db_prefix"].(string)
+	if !ok {
+		panic("init config error")
+	}
+
+	slog.Debug("config loaded successfully", config)
+	insertSelfService(db)
+	loadServices(db)
+
+}
+func insertSelfService(db *Database) {
+	selfService := NuesService{
+		Id:   nues.ServiceId,
+		Name: nues.ServiceName,
+		Ip:   nues.IP,
+		Port: nues.RpcPort,
+	}
+	_, err := db.Collection("services").UpdateOne(context.Background(), bson.M{"_id": selfService.Id}, bson.M{"$set": selfService}, options.Update().SetUpsert(true))
+	if err != nil {
+		panic(err)
+	}
+	slog.Debug("self service injected successfully")
+}
+func loadServices(db *Database) {
+
+	var services []NuesService
+	cur, err := db.Collection("services").Find(context.TODO(), bson.M{})
+	if err != nil {
+		panic(err)
+	}
+	err = cur.All(context.TODO(), &services)
+	if err != nil && err != mongo.ErrNoDocuments {
+		panic(err)
+	}
+	nues.services = services
+	slog.Debug("services loaded successfully", "services", services)
+
+}
+
 func run() {
+	initConfig()
 	initNuesDb()
 	initAuth()
 	registerCustomValidators()

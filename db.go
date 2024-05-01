@@ -126,7 +126,7 @@ func (d *Database) GetCollection(col string) *mongo.Collection {
 	if col == "" {
 		panic("no collection should be empty, something is seriously wrong")
 	}
-	return d.Collection(fmt.Sprintf("%s_%s", nues.DbPrefix, col))
+	return d.Collection(fmt.Sprintf("%s_%s", nues.dbPrefix, col))
 }
 
 func (d *Database) GetOne(Collection, field, value string) (*bson.M, error) {
@@ -204,7 +204,7 @@ func (d *Database) AddIndex(field string, collection string) error {
 func initNuesDb() {
 
 	var err error
-	DB, err = InitNewDb(nues.DbUri, nues.DbName, nues.Reset)
+	DB, err = InitNewDb(nues.DbUri, nues.dbName, nues.reset)
 	if err != nil {
 		panic(err)
 	}

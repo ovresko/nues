@@ -106,7 +106,7 @@ func authCall(headerToken string, route Route) bool {
 		return false
 	}
 
-	if nues.AdminToken == headerToken {
+	if nues.adminToken == headerToken {
 		return true
 	}
 

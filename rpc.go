@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/rpc"
-	"time"
+	"slices"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,8 +18,9 @@ type NuesRpcCall struct{}
 type NuesRpcArgs struct {
 	CommandName string
 	Payload     []byte
-	Token       string
 	CallId      string
+
+	token string
 }
 type NuesRpcResponse struct {
 	ServiceId string
@@ -33,15 +33,13 @@ type NuesRpc struct {
 }
 
 type NuesService struct {
-	Ip   string
-	Port string
-	Name string
+	Id   string `bson:"_id" json:"tag,omitempty"`
+	Name string `json:"name,omitempty"`
+	Ip   string `json:"ip,omitempty"`
+	Port string `json:"port,omitempty"`
 }
 
-var services map[string]*NuesService = make(map[string]*NuesService)
-
 func initRpc() {
-	loadServices()
 	nrc := new(NuesRpcCall)
 	rpc.RegisterName("NuesRpcCall", nrc)
 	rpc.HandleHTTP()
@@ -56,7 +54,7 @@ func (n *NuesRpcCall) Call(args *NuesRpcArgs, reply *NuesRpcResponse) error {
 	if !found {
 		return ErrBadCommand
 	}
-	auth := authCall(args.Token, route)
+	auth := authCall(args.token, route)
 	if !auth {
 		return ErrUserNotAuth
 	}
@@ -178,54 +176,19 @@ func (n *NuesRpc) Serve(ctx context.Context) {
 }
 
 func getService(name string) *NuesService {
-	service, found := services[name]
-	if !found {
+	index := slices.IndexFunc[[]NuesService](nues.services, func(s NuesService) bool {
+		return s.Name == name
+	})
+	if index < 0 {
 		slog.Error("service %s not found", name)
 		panic(fmt.Sprintf("service %v not found", name))
 	}
-	return service
-
-}
-func loadServices() {
-
-	go func() {
-		c := http.DefaultClient
-		for {
-			res, err := c.Get(nues.ServicesFileUrl)
-			if err != nil {
-				slog.Error("load service failed", "err", err)
-			} else {
-				body, err := io.ReadAll(res.Body)
-				if err != nil {
-					slog.Error("load service failed", "err", err)
-				} else {
-					var newServices map[string]map[string]string = make(map[string]map[string]string)
-					err = json.Unmarshal(body, &newServices)
-					if err != nil {
-						slog.Error("load service failed", "err", err)
-					} else {
-						for k := range services {
-							delete(services, k)
-						}
-						for k, v := range newServices {
-							slog.Debug("registering new service", "name", k, "ip", v["ip"], "port", v["port"])
-							services[k] = &NuesService{
-								Ip:   v["ip"],
-								Port: v["port"],
-								Name: k,
-							}
-						}
-					}
-				}
-			}
-			time.Sleep(time.Duration(time.Second * 60))
-		}
-	}()
+	return &nues.services[index]
 
 }
 
 func RequestRpc(serviceName string, args NuesRpcArgs) (*NuesRpcResponse, error) {
-
+	args.token = nues.adminToken
 	service := getService(serviceName)
 	client, err := rpc.DialHTTP("tcp", service.Ip+service.Port)
 	if err != nil {

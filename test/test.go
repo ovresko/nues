@@ -13,16 +13,14 @@ var routes nues.Routes = nues.Routes{
 
 func main() {
 	_ = nues.RunServer(nues.Nues{
-		Debug:      true,
-		ServiceId:  "sabilwallet_1",
-		DbUri:      "mongodb://localhost:27017",
-		DbName:     "sabil_ms",
-		DbPrefix:   "sb",
-		AdminToken: "TOKEN",
-		Reset:      false,
-		ApiPort:    ":8080",
-		RpcPort:    "",
-		Routes:     routes,
-		ReqPerSec:  3,
+		Debug:       true,
+		ServiceId:   "sabilwallet_1",
+		DbUri:       "mongodb://localhost:27017",
+		ServiceName: "Test",
+		IP:          "localhost",
+		ApiPort:     ":8080",
+		RpcPort:     "",
+		Routes:      routes,
+		ReqPerSec:   3,
 	})
 }
