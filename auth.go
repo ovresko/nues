@@ -2,9 +2,12 @@ package nues
 
 import (
 	"context"
+	"fmt"
 	"slices"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -15,8 +18,8 @@ type Identity struct {
 }
 
 type Session struct {
-	IdentityId string `bson:"_id"`
-	Token      string
+	IdentityId string `validate:"required" bson:"_id" json:"identity_id"`
+	Token      string `validate:"required" json:"token"`
 }
 
 func initAuth() {
@@ -31,6 +34,46 @@ func initAuth() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func ClearSessions(identityId string) error {
+	_, err := DB.GetCollection(nues.colSessions).DeleteMany(context.TODO(), bson.M{"_id": identityId})
+	return err
+
+}
+func RegisterNewSession(identityId string) (*Session, error) {
+	if identityId == "" {
+		return nil, NewError(-1, "identity id is required")
+	}
+	var identity Identity
+	err := DB.GetCollection(nues.colIdentity).FindOne(context.TODO(), bson.M{"_id": identityId}).Decode(&identity)
+	if err != nil {
+
+		return nil, err
+	}
+	if identity.IdentityId == "" {
+		return nil, ErrIdentityNotFound
+	}
+	session := &Session{
+		IdentityId: identityId,
+		Token:      fmt.Sprintf("%s:%s", identityId, GenerateId()),
+	}
+	err = validate.Struct(session)
+	if err != nil {
+		return nil, err
+	}
+	_, err = DB.GetCollection(nues.colSessions).InsertOne(context.TODO(), session)
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			err = DB.GetCollection(nues.colSessions).FindOne(context.TODO(), bson.M{"_id": identityId}).Decode(session)
+			if err != nil {
+				return nil, ErrSystemInternal
+			}
+		} else {
+			return nil, ErrSystemInternal
+		}
+	}
+	return session, err
 }
 
 func RegisterNewIdentity(identity Identity) error {
@@ -51,7 +94,7 @@ func RegisterNewIdentity(identity Identity) error {
 	return nil
 }
 
-func authCall(token string, route Route) bool {
+func authCall(headerToken string, route Route) bool {
 
 	if route.Name == "" {
 		panic("route name is required")
@@ -59,16 +102,23 @@ func authCall(token string, route Route) bool {
 	if route.Public {
 		return true
 	}
-	if token == "" {
+	if headerToken == "" {
 		return false
 	}
 
-	if nues.AdminToken == token {
+	if nues.AdminToken == headerToken {
 		return true
 	}
 
+	parts := strings.Split(headerToken, ":")
+	if len(parts) != 2 {
+		return false
+	}
+	identityId := parts[0]
+	token := parts[1]
+
 	var session *Session
-	err := DB.GetCollection(nues.colSessions).FindOne(context.TODO(), bson.M{"token": token}).Decode(session)
+	err := DB.GetCollection(nues.colSessions).FindOne(context.TODO(), bson.M{"token": token, "_id": identityId}).Decode(session)
 	if err != nil || session == nil {
 		return false
 	}

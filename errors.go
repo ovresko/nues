@@ -32,4 +32,5 @@ var (
 	ErrProjectionFailed = NewError(4, "projection failed")
 	ErrUpsertFailed     = NewError(5, "upsert failed")
 	ErrPhoneBadFormat   = NewError(6, "phone format not supported")
+	ErrIdentityNotFound = NewError(7, "identity id is required")
 )

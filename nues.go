@@ -56,7 +56,19 @@ func RunServer(_config Nues) error {
 
 	logL := slog.LevelWarn
 	if nues.Debug {
+		slog.Info("setting log level to debug")
 		logL = slog.LevelDebug
+	}
+
+	l := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     logL,
+		AddSource: true,
+	}))
+
+	slog.SetDefault(l) // configures log package to print with LevelInfo
+
+	if !slog.Default().Enabled(context.TODO(), logL) {
+		panic("error setting logger")
 	}
 	slog.LogAttrs(context.TODO(), logL, nues.ServiceId)
 	run()

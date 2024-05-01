@@ -3,9 +3,11 @@ package nues
 import (
 	"context"
 	"log/slog"
+	"reflect"
 	"sync"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -26,6 +28,13 @@ type Projection interface {
 	CreateIndexes() error
 }
 
+func GetOne[T Projection](filter bson.M) (*T, error) {
+
+	return GetProjectionFirst[T](mongo.Pipeline{
+		bson.D{{"$match", filter}},
+	})
+}
+
 func GetProjectionFirst[T Projection](pipeline mongo.Pipeline) (*T, error) {
 	pipeline = append(pipeline, bson.D{{"$limit", 1}})
 	res, err := GetProjection[T](pipeline)
@@ -44,8 +53,16 @@ func UpdateProjection[T Projection](id string, valuesMap interface{}, upsert boo
 		return err
 	}
 
-	err := validate.Struct(valuesMap)
+	var err error
+	tt := reflect.TypeOf(valuesMap)
+	if tt == reflect.TypeOf(reflect.Struct) {
+		err = validate.Struct(valuesMap)
+	}
+
 	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			slog.Error(err.Field(), "tag", err.Tag())
+		}
 		slog.Error("saving projection failed", "err", err)
 		return err
 	}

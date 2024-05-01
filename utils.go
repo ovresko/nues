@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"io"
 
@@ -42,6 +43,7 @@ func CleanPhoneNumber(rawNumber string) (string, error) {
 
 func GenerateId() string {
 	id := uuid.NewString()
+	id = strings.ReplaceAll(id, "-", "")
 	return id
 }
 func HashIt(val string) string {

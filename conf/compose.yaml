@@ -1,0 +1,11 @@
+services:
+  proxy:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - type: bind
+        source: ./nginx.conf
+        target: /etc/nginx/conf.d/default.conf 
+        read_only: true
+    restart: always
