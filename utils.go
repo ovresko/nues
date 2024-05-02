@@ -1,6 +1,7 @@
 package nues
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"log/slog"
@@ -208,6 +209,22 @@ func GetClientIpAddr(r *http.Request) string {
 	return ip
 }
 
+func identityValidator(fl validator.FieldLevel) bool {
+
+	if !fl.Field().IsValid() {
+		return false
+	}
+
+	id := fl.Field().String()
+	if id == "" {
+		return false
+	}
+	res, err := DB.GetCollection(nues.colIdentity).CountDocuments(context.TODO(), bson.M{"_id": id})
+	if err != nil {
+		return false
+	}
+	return res > 0
+}
 func phoneValidator(fl validator.FieldLevel) bool {
 
 	if !fl.Field().IsValid() {

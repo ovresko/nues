@@ -190,20 +190,33 @@ type EvSent struct {
 
 var EvTransferredName string = "EvTransferred"
 
+type TransferredOperation int
+
+const (
+	SendOp TransferredOperation = iota
+	PayOp
+	CommissionOp
+	FeeOp
+	VoucherOp
+	CashinOp
+	CashoutOp
+)
+
 type EvTransferred struct {
-	Reference   string   `validate:"required" json:"reference" bson:"reference"`
-	SenderId    string   `validate:"required" json:"sender_id" bson:"sender_id"`
-	RecipientId string   `validate:"required" json:"recipient_id" bson:"recipient_id"`
-	Amount      float64  `validate:"required,gt=0" json:"amount" bson:"amount"`
-	Tags        []string `json:"tags" bson:"tags"`
+	Reference   string               `validate:"required" json:"reference" bson:"reference"`
+	SenderId    string               `validate:"required" json:"sender_id" bson:"sender_id"`
+	RecipientId string               `validate:"required" json:"recipient_id" bson:"recipient_id"`
+	Amount      float64              `validate:"required,gt=0" json:"amount" bson:"amount"`
+	Operation   TransferredOperation `validate:"required" json:"operation" bson:"operation"`
 }
 
 var EvCashTopupName string = "EvCashTopup"
 
 type EvCashTopup struct {
-	UserId string  `json:"user_id"`
-	Amount float64 `json:"amount"`
-	Paid   float64 `json:"paid"`
+	Reference string  `json:"reference" bson:"reference"`
+	UserId    string  `json:"user_id" bson:"user_id"`
+	Amount    float64 `json:"amount" bson:"amount"`
+	Paid      float64 `json:"paid" bson:"paid"`
 }
 
 var EvPayseraTopupName string = "EvPayseraTopup"

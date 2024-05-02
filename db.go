@@ -122,23 +122,24 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 
 }
 
-func getInternalDb() *Database {
-	configDb := "sabil"
-	db, err := InitNewDb(nues.DbUri, configDb, false)
-	if err != nil {
-		panic(err)
-	}
-	return db
-}
+// func getInternalDb() *Database {
+// 	configDb := "sabil"
+// 	db, err := InitNewDb(nues.DbUri, configDb, false)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	return db
+// }
 
-func GetConfig(id string) bson.M {
-	db := getInternalDb()
-	defer db.Disconnect()
+func GetConfig[T any](id string, doPanic bool) *T {
 
-	var config bson.M
-	err := db.Collection("__config").FindOne(context.TODO(), bson.M{"_id": id}).Decode(&config)
+	var config *T
+	err := DB.Collection("__config").FindOne(context.TODO(), bson.M{"_id": id}).Decode(config)
 	if err != nil {
-		panic(err)
+		if doPanic {
+			panic(err)
+		}
+		return nil
 	}
 	return config
 }
@@ -225,11 +226,10 @@ func (d *Database) AddIndex(field string, collection string) error {
 func initNuesDb() {
 
 	var err error
-	DB, err = InitNewDb(nues.DbUri, nues.dbName, nues.reset)
+	DB, err = InitNewDb(nues.DbUri, nues.DbName, nues.reset)
 	if err != nil {
 		panic(err)
 	}
-	createIndexes()
 
 }
 
@@ -256,7 +256,7 @@ func InitNewDb(dbUri, dbName string, reset bool) (*Database, error) {
 	return _DB, nil
 }
 
-func createIndexes() {
+func initNuesIndexes() {
 
 	index := mongo.IndexModel{
 		Keys: bson.M{"name": 1},

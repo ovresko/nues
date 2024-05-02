@@ -21,6 +21,5 @@ func main() {
 		ApiPort:     ":8080",
 		RpcPort:     "",
 		Routes:      routes,
-		ReqPerSec:   3,
 	})
 }

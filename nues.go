@@ -23,12 +23,12 @@ type Nues struct {
 	ServiceId   string
 	ServiceName string
 	DbUri       string
+	DbName      string
 	IP          string
 	ApiPort     string
 	RpcPort     string
 	Routes      Routes
 
-	dbName         string
 	dbPrefix       string
 	adminToken     string
 	reset          bool
@@ -49,6 +49,7 @@ func RunServer(_config Nues) error {
 	MustNotEmpty(_config.ServiceId, NewError(-1, "Service ID is required"))
 	MustNotEmpty(_config.ServiceName, NewError(-1, "Service Name is required"))
 	MustNotEmpty(_config.DbUri, NewError(-1, "MongoUri is required"))
+	MustNotEmpty(_config.DbName, NewError(-1, "DbName is required"))
 	MustNotEmpty(_config.ApiPort, NewError(-1, "API Port is required"))
 	MustNotEmpty(_config.Routes, NewError(-1, "Routes is required"))
 
@@ -77,19 +78,39 @@ func RunServer(_config Nues) error {
 
 func registerCustomValidators() {
 	validate.RegisterValidation("phone_dz", phoneValidator)
+	validate.RegisterValidation("identity", identityValidator)
 }
 
 func initConfig() {
-	var config bson.M = GetConfig("nues")
+	var config bson.M = GetConfig("nues", false)
+	if config == nil {
+		// init default config
+		config = map[string]any{
+			"_id":             "nues",
+			"reset":           false,
+			"admin_token":     GenerateId(),
+			"col_commands":    "commands",
+			"col_events":      "events",
+			"col_watchers":    "watchers",
+			"col_sessions":    "sessions",
+			"col_identity":    "identities",
+			"col_projections": "projections",
+			"db_prefix":       "sb",
+		}
+		_, err := DB.Collection("__config").InsertOne(context.TODO(), config)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	var ok bool
 	nues.reset, ok = config["reset"].(bool)
 	if !ok {
-		panic("init config error")
+		panic("reset config error")
 	}
 	nues.adminToken, ok = config["admin_token"].(string)
 	if !ok {
-		panic("init config error")
+		panic("admintoken config error")
 	}
 	nues.colCommands, ok = config["col_commands"].(string)
 	if !ok {
@@ -115,10 +136,7 @@ func initConfig() {
 	if !ok {
 		panic("init config error")
 	}
-	nues.dbName, ok = config["db_name"].(string)
-	if !ok {
-		panic("init config error")
-	}
+
 	nues.dbPrefix, ok = config["db_prefix"].(string)
 	if !ok {
 		panic("init config error")
@@ -130,15 +148,13 @@ func initConfig() {
 
 }
 func insertSelfService() {
-	db := getInternalDb()
-	defer db.Disconnect()
 	selfService := NuesService{
 		Id:   nues.ServiceId,
 		Name: nues.ServiceName,
 		Ip:   nues.IP,
 		Port: nues.RpcPort,
 	}
-	_, err := db.Collection("__services").UpdateOne(context.Background(), bson.M{"_id": selfService.Id}, bson.M{"$set": selfService}, options.Update().SetUpsert(true))
+	_, err := DB.Collection("__services").UpdateOne(context.Background(), bson.M{"_id": selfService.Id}, bson.M{"$set": selfService}, options.Update().SetUpsert(true))
 	if err != nil {
 		panic(err)
 	}
@@ -147,10 +163,8 @@ func insertSelfService() {
 func loadServices() {
 	go func() {
 		for {
-			db := getInternalDb()
-			defer db.Disconnect()
 			var services []NuesService
-			cur, err := db.Collection("__services").Find(context.TODO(), bson.M{})
+			cur, err := DB.Collection("__services").Find(context.TODO(), bson.M{})
 			if err != nil {
 				panic(err)
 			}
@@ -166,8 +180,9 @@ func loadServices() {
 }
 
 func run() {
-	initConfig()
 	initNuesDb()
+	initConfig()
+	initNuesIndexes()
 	initAuth()
 	registerCustomValidators()
 	var rpc Server
