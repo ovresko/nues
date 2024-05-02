@@ -33,10 +33,10 @@ type NuesRpc struct {
 }
 
 type NuesService struct {
-	Id   string `bson:"_id" json:"tag,omitempty"`
-	Name string `json:"name,omitempty"`
-	Ip   string `json:"ip,omitempty"`
-	Port string `json:"port,omitempty"`
+	Id   string `bson:"_id" json:"tag"`
+	Name string `json:"name"`
+	Ip   string `json:"ip"`
+	Port string `json:"port"`
 }
 
 func initRpc() {

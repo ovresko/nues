@@ -122,6 +122,27 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 
 }
 
+func getInternalDb() *Database {
+	configDb := "sabil"
+	db, err := InitNewDb(nues.DbUri, configDb, false)
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
+func GetConfig(id string) bson.M {
+	db := getInternalDb()
+	defer db.Disconnect()
+
+	var config bson.M
+	err := db.Collection("__config").FindOne(context.TODO(), bson.M{"_id": id}).Decode(&config)
+	if err != nil {
+		panic(err)
+	}
+	return config
+}
+
 func (d *Database) GetCollection(col string) *mongo.Collection {
 	if col == "" {
 		panic("no collection should be empty, something is seriously wrong")

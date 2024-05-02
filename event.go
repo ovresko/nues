@@ -20,6 +20,15 @@ type EvAttempt struct {
 	Command interface{} `json:"command"`
 }
 
+var EvAppConfigUpdatedName string = "EvAppConfigUpdated"
+
+type EvAppConfigUpdated struct {
+	AppName        string
+	SupportContact string
+	SupportWebsite string
+	Banners        []map[string]interface{}
+}
+
 var EvSignedupName string = "EvSignedup"
 
 type EvSignedup struct {
@@ -129,10 +138,10 @@ type EvBalanceUnlocked struct {
 var EvSendRequestIssuedName string = "EvSendRequestIssued"
 
 type EvSendRequestIssued struct {
-	Reference string  `json:"reference"`
-	UserId    string  `json:"user_id"`
-	Amount    float64 `json:"amount"`
-	Note      string  `json:"note"`
+	Reference string  `validate:"" json:"reference" bson:"reference"`
+	UserId    string  `validate:"required" json:"user_id" bson:"user_id"`
+	Amount    float64 `validate:"required,gt=0" json:"amount" bson:"amount"`
+	Note      string  `validate:"required" json:"note" bson:"note"`
 }
 
 var EvVoucherCreatedName string = "EvVoucherCreated"
@@ -170,22 +179,23 @@ type EvVoucherExpired struct {
 var EvSentName string = "EvSent"
 
 type EvSent struct {
-	Reference   string  `json:"reference,omitempty"`
-	SenderId    string  `json:"sender_id,omitempty"`
-	RecipientId string  `json:"recipient_id,omitempty"`
-	Comments    string  `json:"comments,omitempty"`
-	Purpose     string  `json:"purpose,omitempty"`
-	RequestId   string  `json:"request_id,omitempty"`
-	Amount      float64 `json:"amount,omitempty"`
+	Reference   string  `json:"reference" bson:"reference"`
+	SenderId    string  `json:"sender_id" bson:"sender_id"`
+	RecipientId string  `json:"recipient_id" bson:"recipient_id"`
+	Comments    string  `json:"comments" bson:"comments"`
+	Purpose     string  `json:"purpose" bson:"purpose"`
+	RequestId   string  `json:"request_id" bson:"request_id"`
+	Amount      float64 `json:"amount" bson:"amount"`
 }
 
 var EvTransferredName string = "EvTransferred"
 
 type EvTransferred struct {
-	Reference   string  `validate:"required" json:"reference,omitempty"`
-	SenderId    string  `validate:"required" json:"sender_id,omitempty"`
-	RecipientId string  `validate:"required" json:"recipient_id,omitempty"`
-	Amount      float64 `validate:"required,gt=0" json:"amount,omitempty"`
+	Reference   string   `validate:"required" json:"reference" bson:"reference"`
+	SenderId    string   `validate:"required" json:"sender_id" bson:"sender_id"`
+	RecipientId string   `validate:"required" json:"recipient_id" bson:"recipient_id"`
+	Amount      float64  `validate:"required,gt=0" json:"amount" bson:"amount"`
+	Tags        []string `json:"tags" bson:"tags"`
 }
 
 var EvCashTopupName string = "EvCashTopup"

@@ -15,10 +15,8 @@ import (
 )
 
 type NuesApi struct {
-	context   context.Context
-	server    *http.Server
-	throttle  map[string]int
-	reqPerSec int
+	context context.Context
+	server  *http.Server
 }
 
 func Ping(context.Context, map[string]any) RouteResponse {
@@ -92,53 +90,6 @@ func (h *NuesApi) httpServe(route Route, r *http.Request) (any, error) {
 
 }
 
-// func (h *NuesApi) httpAuth(route Route, r *http.Request) bool {
-
-// 	switch route.auth {
-// 	case ROUTE_PUBLIC:
-// 		slog.Info("PUBLIC route")
-// 		return true
-// 	case ROUTE_USER:
-// 		slog.Info("USER", "path", route)
-// 		return h.AuthUser(r)
-// 	case ROUTE_ADMIN:
-// 		slog.Info("ADMIN", "path", route)
-// 		return h.AuthAdmin(r)
-// 	}
-
-// 	return false
-// }
-
-func (h *NuesApi) clearthrottle() {
-
-	for {
-		select {
-		case <-h.context.Done():
-			return
-		default:
-			// slog.Debug("clearing throttle...", "val", h.throttle)
-			clear(h.throttle)
-			time.Sleep(time.Duration(time.Second * 5))
-		}
-	}
-}
-
-func (h *NuesApi) canCall(r *http.Request) bool {
-
-	ip := GetClientIpAddr(r)
-
-	count, found := h.throttle[ip]
-	if !found {
-		h.throttle[ip] = 1
-	} else {
-		h.throttle[ip] = count + 1
-	}
-
-	can := h.throttle[ip] < h.reqPerSec*5
-	slog.Info("throttle", "attempts", h.throttle[ip], "can", can)
-	return can
-}
-
 func (h *NuesApi) config() {
 
 	slog.Info("Runing API server configuration")
@@ -157,11 +108,6 @@ func (h *NuesApi) config() {
 		var called bool
 		var token string
 		var cookie *http.Cookie
-
-		if !h.canCall(r) {
-			http.Error(w, "rate limit exceeded", http.StatusForbidden)
-			return
-		}
 
 		if r.Method != http.MethodPost {
 			goto abort
@@ -253,12 +199,7 @@ func (h *NuesApi) Close() error {
 func (h *NuesApi) Serve(ctx context.Context) {
 	h.context = ctx
 	h.config()
-	h.throttle = make(map[string]int)
-	if h.reqPerSec == 0 {
-		h.reqPerSec = 2
-	}
 
-	go h.clearthrottle()
 	h.server = &http.Server{
 		Addr:           nues.ApiPort,
 		ReadTimeout:    10 * time.Second,

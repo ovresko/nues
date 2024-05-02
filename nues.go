@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,7 +27,6 @@ type Nues struct {
 	ApiPort     string
 	RpcPort     string
 	Routes      Routes
-	ReqPerSec   int
 
 	dbName         string
 	dbPrefix       string
@@ -80,17 +80,8 @@ func registerCustomValidators() {
 }
 
 func initConfig() {
+	var config bson.M = GetConfig("nues")
 
-	configDb := "sabil"
-	db, err := InitNewDb(nues.DbUri, configDb, false)
-	if err != nil {
-		panic(err)
-	}
-	var config bson.M
-	err = db.Collection("config").FindOne(context.TODO(), bson.M{}).Decode(&config)
-	if err != nil {
-		panic(err)
-	}
 	var ok bool
 	nues.reset, ok = config["reset"].(bool)
 	if !ok {
@@ -134,37 +125,44 @@ func initConfig() {
 	}
 
 	slog.Debug("config loaded successfully", config)
-	insertSelfService(db)
-	loadServices(db)
+	insertSelfService()
+	loadServices()
 
 }
-func insertSelfService(db *Database) {
+func insertSelfService() {
+	db := getInternalDb()
+	defer db.Disconnect()
 	selfService := NuesService{
 		Id:   nues.ServiceId,
 		Name: nues.ServiceName,
 		Ip:   nues.IP,
 		Port: nues.RpcPort,
 	}
-	_, err := db.Collection("services").UpdateOne(context.Background(), bson.M{"_id": selfService.Id}, bson.M{"$set": selfService}, options.Update().SetUpsert(true))
+	_, err := db.Collection("__services").UpdateOne(context.Background(), bson.M{"_id": selfService.Id}, bson.M{"$set": selfService}, options.Update().SetUpsert(true))
 	if err != nil {
 		panic(err)
 	}
 	slog.Debug("self service injected successfully")
 }
-func loadServices(db *Database) {
-
-	var services []NuesService
-	cur, err := db.Collection("services").Find(context.TODO(), bson.M{})
-	if err != nil {
-		panic(err)
-	}
-	err = cur.All(context.TODO(), &services)
-	if err != nil && err != mongo.ErrNoDocuments {
-		panic(err)
-	}
-	nues.services = services
-	slog.Debug("services loaded successfully", "services", services)
-
+func loadServices() {
+	go func() {
+		for {
+			db := getInternalDb()
+			defer db.Disconnect()
+			var services []NuesService
+			cur, err := db.Collection("__services").Find(context.TODO(), bson.M{})
+			if err != nil {
+				panic(err)
+			}
+			err = cur.All(context.TODO(), &services)
+			if err != nil && err != mongo.ErrNoDocuments {
+				panic(err)
+			}
+			nues.services = services
+			slog.Debug("services loaded successfully", "services", services)
+			time.Sleep(time.Duration(time.Second * 60 * 2))
+		}
+	}()
 }
 
 func run() {
@@ -179,9 +177,7 @@ func run() {
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	var api Server = &NuesApi{
-		throttle:  make(map[string]int),
-		reqPerSec: 4,
-		context:   context.TODO(),
+		context: context.TODO(),
 	}
 	go api.Serve(ctx)
 
