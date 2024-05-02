@@ -82,20 +82,20 @@ func registerCustomValidators() {
 }
 
 func initConfig() {
-	var config bson.M = GetConfig("nues", false)
+	config := GetConfig[ConfigNues]("nues", false)
 	if config == nil {
 		// init default config
-		config = map[string]any{
-			"_id":             "nues",
-			"reset":           false,
-			"admin_token":     GenerateId(),
-			"col_commands":    "commands",
-			"col_events":      "events",
-			"col_watchers":    "watchers",
-			"col_sessions":    "sessions",
-			"col_identity":    "identities",
-			"col_projections": "projections",
-			"db_prefix":       "sb",
+		config = &ConfigNues{
+			Id:             "nues",
+			Reset:          false,
+			AdminToken:     GenerateId(),
+			ColCommands:    "commands",
+			ColEvents:      "events",
+			ColWatchers:    "watchers",
+			ColSessions:    "sessions",
+			ColIdentity:    "identities",
+			ColProjections: "projections",
+			DbPrefix:       "sb",
 		}
 		_, err := DB.Collection("__config").InsertOne(context.TODO(), config)
 		if err != nil {
@@ -103,44 +103,15 @@ func initConfig() {
 		}
 	}
 
-	var ok bool
-	nues.reset, ok = config["reset"].(bool)
-	if !ok {
-		panic("reset config error")
-	}
-	nues.adminToken, ok = config["admin_token"].(string)
-	if !ok {
-		panic("admintoken config error")
-	}
-	nues.colCommands, ok = config["col_commands"].(string)
-	if !ok {
-		panic("init config error")
-	}
-	nues.colEvents, ok = config["col_events"].(string)
-	if !ok {
-		panic("init config error")
-	}
-	nues.colIdentity, ok = config["col_identity"].(string)
-	if !ok {
-		panic("init config error")
-	}
-	nues.colProjections, ok = config["col_projections"].(string)
-	if !ok {
-		panic("init config error")
-	}
-	nues.colSessions, ok = config["col_sessions"].(string)
-	if !ok {
-		panic("init config error")
-	}
-	nues.colWatchers, ok = config["col_watchers"].(string)
-	if !ok {
-		panic("init config error")
-	}
-
-	nues.dbPrefix, ok = config["db_prefix"].(string)
-	if !ok {
-		panic("init config error")
-	}
+	nues.reset = config.Reset
+	nues.adminToken = config.AdminToken
+	nues.colCommands = config.ColCommands
+	nues.colEvents = config.ColEvents
+	nues.colIdentity = config.ColIdentity
+	nues.colProjections = config.ColProjections
+	nues.colSessions = config.ColSessions
+	nues.colWatchers = config.ColWatchers
+	nues.dbPrefix = config.DbPrefix
 
 	slog.Debug("config loaded successfully", config)
 	insertSelfService()
