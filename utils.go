@@ -239,3 +239,21 @@ func phoneValidator(fl validator.FieldLevel) bool {
 
 	return regex.MatchString(phone)
 }
+
+func GetMaxLevel(levels []UserLevel) (UserLevel, error) {
+
+	if len(levels) == 0 {
+		slog.Error("user have 0 levels.")
+		return 0, ErrSystemInternal
+	}
+
+	var max UserLevel = UserRegular
+	for _, v := range levels {
+		if v > max {
+			max = v
+		}
+	}
+
+	return max, nil
+
+}

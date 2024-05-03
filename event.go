@@ -94,15 +94,17 @@ type EvAccountDeleted struct {
 var EvUpgradedName string = "EvUpgraded"
 
 type EvUpgraded struct {
-	UserId   string                 `validate:"required,identity" json:"user_id" bson:"user_id"`
-	Username string                 `validate:"required" json:"username" bson:"username"`
-	Levels   []UserLevel            `json:"levels" bson:"levels"`
-	Phone2   string                 `json:"phone_2" bson:"phone_2"`
-	Phone3   string                 `json:"phone_3" bson:"phone_3"`
-	Wilaya   string                 `json:"wilaya" bson:"wilaya"`
-	Long     float64                `json:"long" bson:"long"`
-	Lat      float64                `json:"lat" bson:"lat"`
-	Extras   map[string]interface{} `json:"extras" bson:"extras"`
+	UserId         string                 `validate:"required,identity" json:"user_id" bson:"user_id"`
+	Username       string                 `validate:"required" json:"username" bson:"username"`
+	Levels         []UserLevel            `json:"levels" bson:"levels"`
+	Phone2         string                 `json:"phone_2" bson:"phone_2"`
+	Phone3         string                 `json:"phone_3" bson:"phone_3"`
+	Wilaya         string                 `json:"wilaya" bson:"wilaya"`
+	SendLimit      float64                `validate:"required,ne=0" json:"send_limit" bson:"send_limit"`
+	Long           float64                `json:"long" bson:"long"`
+	Lat            float64                `json:"lat" bson:"lat"`
+	Extras         map[string]interface{} `json:"extras" bson:"extras"`
+	CustomSettings map[TransferredOperation]OpSetting
 }
 
 var EvPinResetName string = "EvPinReset"
@@ -186,8 +188,8 @@ var EvTransferredName string = "EvTransferred"
 
 type EvTransferred struct {
 	Reference   string               `validate:"required" json:"reference" bson:"reference"`
-	SenderId    string               `validate:"required" json:"sender_id" bson:"sender_id"`
-	RecipientId string               `validate:"required" json:"recipient_id" bson:"recipient_id"`
+	SenderId    string               `validate:"required,identity" json:"sender_id" bson:"sender_id"`
+	RecipientId string               `validate:"required,identity" json:"recipient_id" bson:"recipient_id"`
 	Amount      float64              `validate:"required,gt=0" json:"amount" bson:"amount"`
 	Operation   TransferredOperation `validate:"required" json:"operation" bson:"operation"`
 }
@@ -236,10 +238,10 @@ type EvFee struct {
 var EvProductStockName string = "EvProductStock"
 
 type EvProductStock struct {
-	Details   string  `json:"details"`
-	ProductId string  `json:"product_id"`
-	Price     float64 `json:"price"`
-	Qty       float64 `json:"qty"`
+	Details   string  `validate:"required" json:"details" bson:"details"`
+	ProductId string  `validate:"required" json:"product_id" bson:"product_id"`
+	Price     float64 `validate:"required,gt=0" json:"price" bson:"price"`
+	Qty       float64 `validate:"required,ne=0" json:"qty" bson:"qty"`
 }
 
 var EvPurchaseName string = "EvPurchase"
@@ -269,16 +271,9 @@ type EvDelivered struct {
 var EvProductRatesUpdatedName string = "EvProductRatesUpdated"
 
 type EvProductRatesUpdated struct {
-	ProductId                     string  `json:"product_id"`
-	ProductPrice                  float64 `json:"product_price"`
-	ProductAgentCommissionPercent float64 `json:"product_agent_commission_percent"`
-	ProductAgentFeePercent        float64 `json:"product_agent_fee_percent"`
-	ProductAgentCommissionFlat    float64 `json:"product_agent_commission_flat"`
-	ProductAgentFeeFlat           float64 `json:"product_agent_fee_flat"`
-	ProductUserCommissionPercent  float64 `json:"product_user_commission_percent"`
-	ProductUserFeePercent         float64 `json:"product_user_fee_percent"`
-	ProductUserCommissionFlat     float64 `json:"product_user_commission_flat"`
-	ProductUserFeeFlat            float64 `json:"product_user_fee_flat"`
+	ProductId    string              `validate:"required" json:"product_id" bson:"product_id"`
+	ProductPrice float64             `validate:"required,gt=0" json:"product_price" bson:"product_price"`
+	UserRates    []ProductRateConfig `json:"user_rates" bson:"user_rates"`
 }
 
 var EvSendRatesUpdatedName string = "EvSendRatesUpdated"

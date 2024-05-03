@@ -131,10 +131,10 @@ func (d *Database) WatchEvents(eventName string, callback func(Event) error) err
 // 	return db
 // }
 
-func GetConfig[T any](id string, doPanic bool) *T {
+func GetConfig[T ConfigService](doPanic bool) *T {
 
 	var config *T
-	err := DB.Collection("__config").FindOne(context.TODO(), bson.M{"_id": id}).Decode(config)
+	err := DB.Collection("__config").FindOne(context.TODO(), bson.M{"_id": (*config).Name()}).Decode(config)
 	if err != nil {
 		if doPanic {
 			panic(err)

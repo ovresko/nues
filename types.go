@@ -16,13 +16,13 @@ type ConfigNues struct {
 type TransferredOperation int
 
 const (
-	SendOp TransferredOperation = iota
-	PayOp
-	CommissionOp
-	FeeOp
-	VoucherOp
-	CashinOp
-	CashoutOp
+	OpSend TransferredOperation = iota
+	OpPay
+	OpCommission
+	OpFee
+	OpVoucher
+	OpCashin
+	OpCashout
 )
 
 type UserLevel int
@@ -33,3 +33,27 @@ const (
 	UserMerchant
 	UserRelay
 )
+
+type OpSetting struct {
+	FeeFlat           float64 `json:"fee_flat" bson:"fee_flat"`
+	FeePercent        float64 `json:"fee_percent" bson:"fee_percent"`
+	FeeRecipient      string  `json:"fee_recipient" bson:"fee_recipient"`
+	CommissionFlat    float64 `json:"commission_flat" bson:"commission_flat"`
+	CommissionPercent float64 `json:"commission_percent" bson:"commission_percent"`
+	CommissionSender  string  `json:"commission_sender" bson:"commission_sender"`
+	CashinSender      string  `json:"cashin_sender" bson:"cashin_sender"`
+	CashoutRecipient  string  `json:"cashout_recipient" bson:"cashout_recipient"`
+	Limit             float64 `json:"limit" bson:"limit"`
+}
+
+type ProductRateConfig struct {
+	Level            UserLevel `json:"level" bson:"level"`
+	FeeFlat          float64   `json:"fee_flat" bson:"fee_flat"`
+	FeePercent       float64   `json:"fee_percent" bson:"fee_percent"`
+	CommissionFlat   float64   `json:"commission_flat" bson:"commission_flat"`
+	CommissionPercet float64   `json:"commission_percet" bson:"commission_percet"`
+}
+
+type ConfigService interface {
+	Name() string
+}
