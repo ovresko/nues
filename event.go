@@ -94,21 +94,15 @@ type EvAccountDeleted struct {
 var EvUpgradedName string = "EvUpgraded"
 
 type EvUpgraded struct {
-	UserId   string                 `json:"user_id"`
-	Username string                 `json:"username"`
-	Type     string                 `json:"type"`
-	Phone2   string                 `json:"phone_2"`
-	Phone3   string                 `json:"phone_3"`
-	Wilaya   string                 `json:"wilaya"`
-	Long     float64                `json:"long"`
-	Lat      float64                `json:"lat"`
-	Extras   map[string]interface{} `json:"extras"`
-}
-
-var EvDowngradedName string = "EvDowngraded"
-
-type EvDowngraded struct {
-	UserId string `json:"user_id"`
+	UserId   string                 `validate:"required,identity" json:"user_id" bson:"user_id"`
+	Username string                 `validate:"required" json:"username" bson:"username"`
+	Levels   []UserLevel            `json:"levels" bson:"levels"`
+	Phone2   string                 `json:"phone_2" bson:"phone_2"`
+	Phone3   string                 `json:"phone_3" bson:"phone_3"`
+	Wilaya   string                 `json:"wilaya" bson:"wilaya"`
+	Long     float64                `json:"long" bson:"long"`
+	Lat      float64                `json:"lat" bson:"lat"`
+	Extras   map[string]interface{} `json:"extras" bson:"extras"`
 }
 
 var EvPinResetName string = "EvPinReset"
@@ -189,18 +183,6 @@ type EvSent struct {
 }
 
 var EvTransferredName string = "EvTransferred"
-
-type TransferredOperation int
-
-const (
-	SendOp TransferredOperation = iota
-	PayOp
-	CommissionOp
-	FeeOp
-	VoucherOp
-	CashinOp
-	CashoutOp
-)
 
 type EvTransferred struct {
 	Reference   string               `validate:"required" json:"reference" bson:"reference"`

@@ -12,3 +12,24 @@ type ConfigNues struct {
 	ColProjections string `json:"col_projections" bson:"col_projections"`
 	DbPrefix       string `json:"db_prefix" bson:"db_prefix"`
 }
+
+type TransferredOperation int
+
+const (
+	SendOp TransferredOperation = iota
+	PayOp
+	CommissionOp
+	FeeOp
+	VoucherOp
+	CashinOp
+	CashoutOp
+)
+
+type UserLevel int
+
+const (
+	UserRegular UserLevel = iota
+	UserAgent
+	UserMerchant
+	UserRelay
+)
