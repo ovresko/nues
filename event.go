@@ -20,6 +20,41 @@ type EvAttempt struct {
 	Command interface{} `json:"command"`
 }
 
+var EvProductDelistedName string = "EvProductDelisted"
+
+type EvProductDelisted struct {
+	Id string `validate:"required" bson:"_id" json:"id"`
+}
+
+var EvProductEnlistedName string = "EvProductEnlisted"
+
+type EvProductEnlisted struct {
+	Id          string         `validate:"required" bson:"_id" json:"id"`
+	MerchantId  string         `validate:"required,identity" json:"merchant_id" bson:"merchant_id"`
+	ProductName string         `validate:"required" json:"product_name" bson:"product_name"`
+	Active      bool           `json:"active" bson:"active"`
+	Banner      string         `json:"banner" bson:"banner"`
+	Category    string         `validate:"required" json:"category" bson:"category"`
+	Description string         `validate:"required" json:"description" bson:"description"`
+	Featured    bool           `json:"featured" bson:"featured"`
+	Fields      []ProductField `validate:"dive" json:"fields" bson:"fields"`
+	Image       string         `validate:"required" json:"image" bson:"image"`
+	ProductUrl  string         `json:"product_url" bson:"product_url"`
+}
+
+type ProductField struct {
+	Id         string  `validate:"required" bson:"_id" json:"id"`
+	Name       string  `validate:"required" json:"name" bson:"name"`
+	Label      string  `validate:"required" json:"label" bson:"label"`
+	Type       string  `validate:"required" json:"type" bson:"type"`
+	Required   bool    `json:"required" bson:"required"`
+	IsQty      bool    `bson:"is_qty" json:"is_qty"`
+	Min        float64 `json:"min" bson:"min"`
+	Max        float64 `json:"max" bson:"max"`
+	Choices    string  `json:"choices" bson:"choices"`
+	Validation string  `json:"validation" bson:"validation"`
+}
+
 var EvAppConfigUpdatedName string = "EvAppConfigUpdated"
 
 type EvAppConfigUpdated struct {
@@ -153,9 +188,10 @@ type EvVoucherCreated struct {
 var EvVoucherRedeemedName string = "EvVoucherRedeemed"
 
 type EvVoucherRedeemed struct {
-	Code   string  `json:"code"`
-	UserId string  `json:"user_id"`
-	Amount float64 `json:"amount"`
+	Reference string  `json:"reference" bson:"reference"`
+	Code      string  `json:"code" bson:"code"`
+	UserId    string  `json:"user_id" bson:"user_id"`
+	Amount    float64 `json:"amount" bson:"amount"`
 }
 
 var EvVoucherVerifiedName string = "EvVoucherVerified"

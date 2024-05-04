@@ -82,7 +82,7 @@ func registerCustomValidators() {
 }
 
 func initConfig() {
-	config := GetConfig[ConfigNues]("nues", false)
+	config := GetConfig[ConfigNues](false)
 	if config == nil {
 		// init default config
 		config = &ConfigNues{

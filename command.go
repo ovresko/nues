@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type CommandResponse map[string]interface{}
+type CommandResponse any
 
 var validate = validator.New(validator.WithRequiredStructEnabled())
 
@@ -71,7 +71,17 @@ func (cr *CommandRoot) Execute(ctx context.Context) {
 	defer session.EndSession(context.TODO())
 	ctxMongo := mongo.NewSessionContext(ctx, session)
 	cr.Response, cr.Error = cr.Command.Handle(ctxMongo)
-
+	if cr.Error == nil {
+		// validate response
+		err = validate.Struct(cr.Response)
+		if err != nil {
+			var errMsg string
+			for _, err := range err.(validator.ValidationErrors) {
+				errMsg = fmt.Sprintf("%s\n%s", errMsg, fmt.Sprintf("%s %s condition failed.", err.Field(), err.Tag()))
+			}
+			cr.Error = NewError(-1, errMsg)
+		}
+	}
 	if cr.Error != nil {
 		slog.Error("command error", cr.Error)
 		evName := reflect.TypeOf(cr.Command).Elem()

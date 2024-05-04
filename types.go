@@ -13,6 +13,10 @@ type ConfigNues struct {
 	DbPrefix       string `json:"db_prefix" bson:"db_prefix"`
 }
 
+func (c ConfigNues) Name() string {
+	return "nues"
+}
+
 type TransferredOperation int
 
 const (
@@ -42,6 +46,7 @@ type OpSetting struct {
 	CommissionPercent float64 `json:"commission_percent" bson:"commission_percent"`
 	CommissionSender  string  `json:"commission_sender" bson:"commission_sender"`
 	CashinSender      string  `json:"cashin_sender" bson:"cashin_sender"`
+	VoucherSender     string  `json:"voucher_sender" bson:"voucher_sender"`
 	CashoutRecipient  string  `json:"cashout_recipient" bson:"cashout_recipient"`
 	Limit             float64 `json:"limit" bson:"limit"`
 }
