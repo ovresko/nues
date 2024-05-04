@@ -187,8 +187,17 @@ func getService(name string) *NuesService {
 
 }
 
-func RequestRpc(serviceName string, args NuesRpcArgs) (*NuesRpcResponse, error) {
-	args.token = nues.adminToken
+func RequestRpc(serviceName, commandName, callId string, payload any) (*NuesRpcResponse, error) {
+	payloadB, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	args := NuesRpcArgs{
+		CommandName: commandName,
+		token:       nues.adminToken,
+		Payload:     payloadB,
+		CallId:      callId,
+	}
 	service := getService(serviceName)
 	client, err := rpc.DialHTTP("tcp", service.Ip+service.Port)
 	if err != nil {
